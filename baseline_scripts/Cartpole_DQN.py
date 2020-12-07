@@ -52,7 +52,8 @@ class DQNAgent:
                  epsilon_min=0.001,
                  layers=None,
                  activation="relu",
-                 lr=0.00025):
+                 lr=0.00025,
+                 rand=0.0):
         self.name = name
         self.env = gym.make('CartPole-v1')
         # by default, CartPole-v1 has max episode steps = 500
@@ -69,7 +70,7 @@ class DQNAgent:
         self.train_start = train_start
         self.target_update_freq = 500
         self.lr = lr
-
+        self.rand = rand
         # create main model
         self.model = OurModel(input_shape=(self.state_size,), action_space=self.action_size,
                               layers=layers, activation=activation, lr=lr)
@@ -137,7 +138,13 @@ class DQNAgent:
         outfile = open("../data/cartpole/data_" + name, "wb")
         pickle.dump(self.memory, outfile)
         outfile.close()
-            
+
+    def env_act_wrapper(self, action):
+        if self.rand == 0.0 or np.random.random() > self.rand:
+            return action
+        else:
+            return random.randrange(self.action_size)
+
     def run(self):
         save_point = 200
         j = 0
@@ -150,7 +157,7 @@ class DQNAgent:
             while not done:
                 # self.env.render()
                 action = self.act(state)
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, _ = self.env.step(self.env_act_wrapper(action))
                 next_state = np.reshape(next_state, [1, self.state_size])
                 if not done or i == self.env._max_episode_steps-1:
                     reward = reward
@@ -247,7 +254,29 @@ def generate_models():
                     agent.run()
 
 
+def generate_random_models():
 
+    layers = [[256, 128, 64], [512, 64]]
+    epsilon_decays = [0.999]
+    activations = ["relu", "tanh"]
+    lrs = [0.00025, 0.0005]
+    rands = [0.2, 0.4, 0.6]
+    for rand in rands:
+        name_prefix = F"cartpole_RAND{int(rand*100)}_DQN_"
+        for lr in lrs:
+            for layer in layers:
+                layer_string = "_".join([str(i) for i in layer])
+                for epsilon_decay in epsilon_decays:
+                    for activation in activations:
+                        name = name_prefix + F"{layer_string}_{epsilon_decay}_{activation}_{lr}_"
+                        print(name)
+                        agent = DQNAgent(name, batch_size=64,
+                         epsilon_decay=epsilon_decay,
+                         epsilon_min=0.02,
+                         layers=layer,
+                         activation=activation,
+                         lr=lr, rand=rand)
+                        agent.run()
 
 
 if __name__ == "__main__":
@@ -256,7 +285,9 @@ if __name__ == "__main__":
     # agent.run()
     # agent.test()
 
-    generate_models()
+    # generate_models()
+    generate_random_models()
+
     # file = open("../data/cartpole/data_teststart", 'rb')
     # d = pickle.load(file)
     # print(d)

@@ -6,7 +6,7 @@ from collections import Counter
 
 
 class BVFT(object):
-    def __init__(self, q_functions, data, gamma, rmax, rmin, tabular=False, verbose=False,
+    def __init__(self, q_functions, data, gamma, rmax, rmin, tabular=False, verbose=False, bins=None,
                  profiling=False):
         self.data = data
         self.n = len(data)
@@ -19,12 +19,14 @@ class BVFT(object):
         self.q_to_data_map = []
         self.q_size = len(q_functions)
         self.verbose = verbose
-        self.bins = [0, 2, 3, 4, 8, 16, 100]
+        if bins is None:
+            bins = [2, 3, 4, 8, 16, 100]
+        self.bins = bins
         self.q_sa = []
         self.r_plus_vfsp = []
         self.q_functions = q_functions
 
-
+        print(F"Data size = {self.n}")
         rewards = np.array([t[2] for t in self.data])
 
         actions = [int(t[1]) for t in self.data]
@@ -83,12 +85,11 @@ class BVFT(object):
     def compute_loss(self, q1, groups):
         Tf = self.r_plus_vfsp[q1].copy()
         for group in groups:
-            Tf[group] = np.sum(Tf[group]) / len(group)
+            Tf[group] = np.mean(Tf[group])
         diff = self.q_sa[q1] - Tf
         return np.sqrt(np.sum(diff ** 2))
 
     def get_bins(self, groups):
-
         bin_ind = np.digitize([len(g) for g in groups], self.bins, right=True)
         c = Counter(bin_ind)
         return np.array([c[i] for i in range(len(self.bins))])
