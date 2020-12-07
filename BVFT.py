@@ -2,47 +2,70 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import random
+from collections import Counter
+
 
 class BVFT(object):
-    def __init__(self, data, gamma, rmax, rmin, resolution=1e-2, tabular=False):
+    def __init__(self, q_functions, data, gamma, rmax, rmin, tabular=False, verbose=False,
+                 profiling=False):
         self.data = data
         self.n = len(data)
         self.rmax = rmax
         self.gamma = gamma
         self.vmax = rmax / (1.0 - gamma)
         self.vmin = rmin / (1.0 - gamma)
-        self.res = resolution
-        self.qs = None
-        self.qs_discrete = None
-        self.q_size = 0
-        self.tabular = tabular
+        self.res = 0
+        self.q_sa_discrete = []
+        self.q_to_data_map = []
+        self.q_size = len(q_functions)
+        self.verbose = verbose
+        self.bins = [0, 2, 3, 4, 8, 16, 100]
+        self.q_sa = []
+        self.r_plus_vfsp = []
+        self.q_functions = q_functions
 
 
-    def discretize(self, Q):
-        if self.tabular:
-            q_out = np.array([Q[t[0], t[1]] for t in self.data])
+        rewards = np.array([t[2] for t in self.data])
+
+        actions = [int(t[1]) for t in self.data]
+
+        if tabular:
+            states = np.array([t[0] for t in self.data])
+            for Q in q_functions:
+                self.q_sa.append(np.array([Q[states[i], actions[i]] for i in range(self.n)]))
+                vfsp = np.array([0.0 if t[3] is None else np.max(Q[t[3]]) for t in self.data])
+                self.r_plus_vfsp.append(rewards + self.gamma * vfsp)
         else:
-            q_out = np.array([Q.predict(t[0])[int(t[1])] for t in range(self.n)])
+            next_states = np.array([t[3][0] for t in self.data])
+            states = np.array([t[0][0] for t in self.data])
+            for Q in q_functions:
+                qs = Q.predict(states)
+                # print(qs)
+                self.q_sa.append(np.array([qs[i][actions[i]] for i in range(self.n)]))
+                vfsp = np.max(Q.predict(next_states), axis=1)
+                self.r_plus_vfsp.append(rewards + self.gamma * vfsp)
 
-        discretized_q = np.digitize(q_out, np.linspace(self.vmin, self.vmax, int((self.vmax - self.vmin) / self.res) + 1), right=True)
-        q_to_data_map = {}
-        for i, q_val in enumerate(discretized_q):
-            if q_val not in q_to_data_map:
-                q_to_data_map[q_val] = i
-            else:
-                if isinstance(q_to_data_map[q_val], int):
-                    q_to_data_map[q_val] = [q_to_data_map[q_val]]
-                q_to_data_map[q_val].append(i)
-        return q_out, discretized_q, q_to_data_map
+    def discretize(self):
+        self.q_sa_discrete = []
+        self.q_to_data_map = []
+        bins = int((self.vmax - self.vmin) / self.res) + 1
 
-    def discretize_qs(self, qs):
-        self.qs = qs
-        self.qs_discrete = [self.discretize(q) for q in qs]
-        self.q_size = len(qs)
+        for q in self.q_sa:
+            discretized_q = np.digitize(q, np.linspace(self.vmin, self.vmax, bins), right=True)
+            self.q_sa_discrete.append(discretized_q)
+            q_to_data_map = {}
+            for i, q_val in enumerate(discretized_q):
+                if q_val not in q_to_data_map:
+                    q_to_data_map[q_val] = i
+                else:
+                    if isinstance(q_to_data_map[q_val], int):
+                        q_to_data_map[q_val] = [q_to_data_map[q_val]]
+                    q_to_data_map[q_val].append(i)
+            self.q_to_data_map.append(q_to_data_map)
 
-    def get_groups(self, q1_discretized, q2_discretized):
-        q1_out, q1_inds, q1_dic = q1_discretized
-        q2_out, q2_inds, q2_dic = q2_discretized
+    def get_groups(self, q1, q2):
+        q1_dic = self.q_to_data_map[q1]
+        q2_inds, q2_dic = self.q_sa_discrete[q2], self.q_to_data_map[q2]
         groups = []
         for key in q1_dic:
             if isinstance(q1_dic[key], list):
@@ -57,60 +80,46 @@ class BVFT(object):
                             groups.append(list(intersect))
         return groups
 
-    def compute_Tf(self, Q1, groups):
-        r = np.array([self.data[i][2] for i in range(self.n)])
-        vfsp = [0 if self.data[i][3] is None else self.gamma * np.max(Q1[self.data[i][3]]) for i in range(self.n)]
-        Tf = r + vfsp
+    def compute_loss(self, q1, groups):
+        Tf = self.r_plus_vfsp[q1].copy()
         for group in groups:
             Tf[group] = np.sum(Tf[group]) / len(group)
-        return Tf
+        diff = self.q_sa[q1] - Tf
+        return np.sqrt(np.sum(diff ** 2))
 
-    def compute_loss(self, q1_discretized, Tf):
-        q1_out, q1_inds, q1_dic = q1_discretized
-        diff = q1_out - Tf
-        return np.sqrt(np.sum(diff**2))
+    def get_bins(self, groups):
 
-    def get_loss(self, q1, q2):
-        groups = self.get_groups(self.qs_discrete[q1], self.qs_discrete[q2])
-        Tf1 = self.compute_Tf(self.qs[q1], groups)
-        Tf2 = self.compute_Tf(self.qs[q2], groups)
-        l1 = self.compute_loss(self.qs_discrete[q1], Tf1)
-        l2 = self.compute_loss(self.qs_discrete[q2], Tf2)
+        bin_ind = np.digitize([len(g) for g in groups], self.bins, right=True)
+        c = Counter(bin_ind)
+        return np.array([c[i] for i in range(len(self.bins))])
 
-        return l1, l2
-
-    def get_loss_1(self, q1):
-        groups = self.get_groups(self.qs_discrete[q1], self.qs_discrete[q1])
-        Tf1 = self.compute_Tf(self.qs[q1], groups)
-        l1 = self.compute_loss(self.qs_discrete[q1], Tf1)
-        return l1
-
-    def run(self, Qs, resolution=1e-2):
+    def run(self, resolution=1e-2):
         self.res = resolution
-        print("Being discretizing outputs of Q functions on batch data")
-        self.discretize_qs(Qs)
+        print(F"Being discretizing outputs of Q functions on batch data with resolution = {resolution}")
+        self.discretize()
         print("Starting pairwise comparison")
-
+        histo = np.zeros(len(self.bins))
         loss_matrix = np.zeros((self.q_size, self.q_size))
-        for i in range(self.q_size):
-            for j in range(i, self.q_size):
-                if i == j:
-                    loss_matrix[i, i] = self.get_loss_1(i)
-                    print("loss |Q{}; Q{}| = {}".format(i, i, loss_matrix[i, i]))
-                else:
-                    l1, l2 = self.get_loss(i, j)
-                    loss_matrix[i, j] = l1
-                    loss_matrix[j, i] = l2
-                    print("loss |Q{}; Q{}| = {}".format(i, j, loss_matrix[i, j]))
-                    print("loss |Q{}; Q{}| = {}".format(j, i, loss_matrix[j, i]))
+        for q1 in range(self.q_size):
+            for q2 in range(q1, self.q_size):
+                groups = self.get_groups(q1, q2)
+                histo += self.get_bins(groups)
+
+                loss_matrix[q1, q2] = self.compute_loss(q1, groups)
+                if self.verbose:
+                    print("loss |Q{}; Q{}| = {}".format(q1, q2, loss_matrix[q1, q2]))
+
+                if q1 != q2:
+                    loss_matrix[q2, q1] = self.compute_loss(q2, groups)
+                    if self.verbose:
+                        print("loss |Q{}; Q{}| = {}".format(q2, q1, loss_matrix[q2, q1]))
 
         q_ranks = np.argsort(np.max(loss_matrix, axis=1))
-
+        print(histo/self.q_size**2)
         print("Ranking of Q functions:")
         print(q_ranks)
 
         return q_ranks, loss_matrix
-
 
 
 if __name__ == '__main__':
@@ -126,8 +135,5 @@ if __name__ == '__main__':
     gamma = 0.9
     rmax, rmin = 1.0, 0.0
 
-    b = BVFT(test_data, gamma, rmax, rmin, tabular=True)
-    b.run([Q1, Q2])
-
-
-
+    b = BVFT([Q1, Q2], test_data, gamma, rmax, rmin, tabular=True, verbose=True)
+    b.run()

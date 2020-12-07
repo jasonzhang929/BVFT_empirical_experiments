@@ -51,7 +51,8 @@ class DQNAgent:
                  epsilon=1.0,
                  epsilon_min=0.001,
                  layers=None,
-                 activation="relu"):
+                 activation="relu",
+                 lr=0.00025):
         self.name = name
         self.env = gym.make('CartPole-v1')
         # by default, CartPole-v1 has max episode steps = 500
@@ -67,12 +68,13 @@ class DQNAgent:
         self.batch_size = batch_size
         self.train_start = train_start
         self.target_update_freq = 500
+        self.lr = lr
 
         # create main model
         self.model = OurModel(input_shape=(self.state_size,), action_space=self.action_size,
-                              layers=layers, activation=activation)
+                              layers=layers, activation=activation, lr=lr)
         self.target = OurModel(input_shape=(self.state_size,), action_space=self.action_size,
-                              layers=layers, activation=activation)
+                              layers=layers, activation=activation, lr=lr)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -146,7 +148,7 @@ class DQNAgent:
             done = False
             i = 0
             while not done:
-                self.env.render()
+                # self.env.render()
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = np.reshape(next_state, [1, self.state_size])
@@ -162,7 +164,8 @@ class DQNAgent:
                     print("episode: {}/{}, score: {}, e: {:.2}, time: {:.1}".format(e, self.EPISODES, i, self.epsilon,
                                                                                     (time.time() - start)/60))
                     if i >= save_point:
-                        save_name = self.name + str(save_point)
+                        cum_reward = self.roll_out_eval()
+                        save_name = self.name + str(save_point) + "_{:.5f}".format(cum_reward)
                         print(F"Saving trained model as {save_name}.h5")
                         self.save(F"{save_name}.h5")
                         save_point += 100
@@ -183,7 +186,7 @@ class DQNAgent:
             done = False
             i = 0
             while not done:
-                self.env.render()
+                # self.env.render()
                 action = np.argmax(self.model.predict(state))
                 next_state, reward, done, _ = self.env.step(action)
                 state = np.reshape(next_state, [1, self.state_size])
@@ -192,38 +195,68 @@ class DQNAgent:
                     print("episode: {}/{}, score: {}".format(e, self.EPISODES, i))
                     break
 
-
-
+    def roll_out_eval(self):
+        length = 500
+        episodes = 50
+        scores = np.zeros(episodes)
+        print("begin eval")
+        for e in range(episodes):
+            state = self.env.reset()
+            state = np.reshape(state, [1, self.state_size])
+            done = False
+            i = 0
+            reward_sum = 0
+            if e%10==0:
+                print(e)
+            while not done:
+                # self.env.render()
+                action = np.argmax(self.model.predict(state))
+                next_state, reward, done, _ = self.env.step(action)
+                state = np.reshape(next_state, [1, self.state_size])
+                i += 1
+                if done and i < self.env._max_episode_steps:
+                    reward = -100
+                reward_sum += reward
+                if done or i == length:
+                    break
+            scores[e] = reward_sum
+        mean_cum_reward = np.mean(scores)
+        print("Eval result: =============================== average reward = {:.5f}".format(mean_cum_reward))
+        return mean_cum_reward
 
 def generate_models():
     name_prefix = "cartpole_DQN_"
-    layers = [[512, 256, 64], [256, 128, 64], [64, 64]]
-    epsilon_decays = [0.999, 0.99995]
+    layers = [[256, 128, 64], [64, 64]]
+    epsilon_decays = [0.999]
     activations = ["relu", "tanh"]
+    lrs = [0.00025, 0.0005]
 
-
-    for layer in layers:
-        layer_string = "_".join([str(i) for i in layer])
-        for epsilon_decay in epsilon_decays:
-            for activation in activations:
-                name = name_prefix + F"{layer_string}_{epsilon_decay}_{activation}_"
-                agent = DQNAgent(name, batch_size=64,
-                 epsilon_decay=epsilon_decay,
-                 epsilon_min=0.02,
-                 layers=layer,
-                 activation=activation)
-                agent.run()
+    for lr in lrs:
+        for layer in layers:
+            layer_string = "_".join([str(i) for i in layer])
+            for epsilon_decay in epsilon_decays:
+                for activation in activations:
+                    name = name_prefix + F"{layer_string}_{epsilon_decay}_{activation}_{lr}_"
+                    print(name)
+                    agent = DQNAgent(name, batch_size=64,
+                     epsilon_decay=epsilon_decay,
+                     epsilon_min=0.02,
+                     layers=layer,
+                     activation=activation,
+                     lr=lr)
+                    agent.run()
 
 
 
 
 
 if __name__ == "__main__":
-    agent = DQNAgent("test")
-    agent.run()
+    # agent = DQNAgent("test")
+    # agent.roll_out_eval()
+    # agent.run()
     # agent.test()
 
-    # generate_models()
+    generate_models()
     # file = open("../data/cartpole/data_teststart", 'rb')
     # d = pickle.load(file)
     # print(d)

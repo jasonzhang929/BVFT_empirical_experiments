@@ -1,3 +1,9 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from BVFT import BVFT
+
+
 def plot_bars():
     gamma = 0.99
     rmax = 20.0
