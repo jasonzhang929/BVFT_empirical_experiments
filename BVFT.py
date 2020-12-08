@@ -20,7 +20,7 @@ class BVFT(object):
         self.q_size = len(q_functions)
         self.verbose = verbose
         if bins is None:
-            bins = [2, 3, 4, 8, 16, 100]
+            bins = [2, 3, 4, 8, 16, 100, 1e10]
         self.bins = bins
         self.q_sa = []
         self.r_plus_vfsp = []
@@ -90,21 +90,25 @@ class BVFT(object):
         return np.sqrt(np.sum(diff ** 2))
 
     def get_bins(self, groups):
-        bin_ind = np.digitize([len(g) for g in groups], self.bins, right=True)
-        c = Counter(bin_ind)
-        return np.array([c[i] for i in range(len(self.bins))])
+        group_sizes = [len(g) for g in groups]
+        bin_ind = np.digitize(group_sizes, self.bins, right=True)
+        bins = np.zeros(len(self.bins) + 1)
+        for i in range(len(group_sizes)):
+            bins[bin_ind[i] + 1] += group_sizes[i]
+        bins[0] = self.n - np.sum(bins)
+        return bins
 
     def run(self, resolution=1e-2):
         self.res = resolution
         print(F"Being discretizing outputs of Q functions on batch data with resolution = {resolution}")
         self.discretize()
         print("Starting pairwise comparison")
-        histo = np.zeros(len(self.bins))
+        histos = []
         loss_matrix = np.zeros((self.q_size, self.q_size))
         for q1 in range(self.q_size):
             for q2 in range(q1, self.q_size):
                 groups = self.get_groups(q1, q2)
-                histo += self.get_bins(groups)
+                histos.append(self.get_bins(groups))
 
                 loss_matrix[q1, q2] = self.compute_loss(q1, groups)
                 if self.verbose:
@@ -116,12 +120,16 @@ class BVFT(object):
                         print("loss |Q{}; Q{}| = {}".format(q2, q1, loss_matrix[q2, q1]))
 
         q_ranks = np.argsort(np.max(loss_matrix, axis=1))
-        print(histo/self.q_size**2)
+        bin_histo = np.mean(histos, axis=0)/self.n
+
         print("Ranking of Q functions:")
         print(q_ranks)
 
-        return q_ranks, loss_matrix
+        return q_ranks, loss_matrix, bin_histo
 
+    def get_br_ranking(self):
+        br = [np.sqrt(np.sum((self.q_sa[q] - self.r_plus_vfsp[q]) ** 2)) for q in range(self.q_size)]
+        return np.argsort(br)
 
 if __name__ == '__main__':
     # Toy example in the paper

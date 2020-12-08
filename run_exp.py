@@ -7,7 +7,7 @@ from os.path import isfile, join
 import os
 import matplotlib.pyplot as plt
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 # Define Env Variables
 ENV_NAME = 'cartpole'
@@ -64,30 +64,50 @@ def experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutio
     model_names = get_file_names(model_keywords)
     q_functions, values = get_models(model_names, n=num_models)
     data_names = get_file_names(data_keywords)
-    fig_rank, axs_rank = plt.subplots(len(resolutions), len(data_sizes))
-    fig_rank.set_size_inches(18.5, 10.5)
+    res_size = len(resolutions)
+    bins = [2, 3, 4, 8, 16, 100, 1e5]
+
+    fig_rank, axs_rank = plt.subplots(res_size + 1, len(data_sizes))
+    fig_rank.set_size_inches(20, 12)
+    fig_rank.suptitle("BVFT ranking vs actual rollout estimate", fontsize=20)
     for ax in axs_rank.flat:
-        ax.set(xlabel='Rank', ylabel='Actual value advantage')
+        ax.set(ylabel='Actual value advantage')
+
+    fig_bin, axs_bin = plt.subplots(res_size, len(data_sizes))
+    fig_bin.set_size_inches(20, 12)
+    fig_bin.suptitle("BVFT group size distributions", fontsize=20)
+    for ax in axs_bin.flat:
+        ax.set(ylabel='Percentage of data points', xlabel="Group size (<=)")
 
     dataset = get_data(data_names, size=max(data_sizes))
     for j, data_size in enumerate(data_sizes):
         data = random.sample(dataset, data_size)
-        print(F"Data size {data_size} ========================================================")
-        bvft = BVFT(q_functions, data, GAMMA, RMAX, RMIN)
+        bvft = BVFT(q_functions, data, GAMMA, RMAX, RMIN, bins=bins)
 
         for i, res in enumerate(resolutions):
-            print(F"Resolution = {res}")
-            ranks, loss_matrix = bvft.run(resolution=res)
+            ranks, loss_matrix, bin_histo = bvft.run(resolution=res)
+            print(np.sort(np.max(loss_matrix, axis=1)))
             axs_rank[i, j].bar([i+1 for i in range(num_models)], values[ranks] - np.mean(values))
-            axs_rank[i, j].set_title("data = {} samples, resolution = {:.6f}".format(data_size, res))
+            axs_rank[i, j].set_title("samples = {}, resolution = {:.5f}".format(data_size, res))
+            axs_bin[i, j].bar([str(i) for i in ([1] + bins)], bin_histo)
+            axs_bin[i, j].set_title("samples = {}, resolution = {:.5f}".format(data_size, res))
+
+        br_rank = bvft.get_br_ranking()
+        axs_rank[res_size, j].bar([i + 1 for i in range(num_models)], values[br_rank] - np.mean(values))
+        axs_rank[res_size, j].set_title(F"data = {data_size} samples, Bellman residual")
+        axs_rank[res_size, j].set(xlabel='Ranking')
     fig_rank.show()
+    fig_bin.show()
 
 
-model_keywords = ["cartpole_DQN", ".h5"]
-data_keywords = ["data_cartpole_DQN"]
-num_models = 2
-data_sizes = [10**n for n in range(2, 3)]
-resolutions = [1e-1**n for n in range(2, 4)]
+model_keywords = ["cartpole_RAND20_DQN", ".h5"]
+data_keywords = ["data_cartpole_RAND20_DQN"]
+data_sizes = [10**n for n in range(3, 6)]
+# data_sizes = [100, 150000]
+resolutions = [1e-1**n for n in range(1, 4)]
+resolutions = [0.5, 0.1, 0.05, 0.01]
 
-for m in [2]:
-    experiment1(model_keywords, data_keywords, m, data_sizes, resolutions)
+model_counts = [5 for j in range(5)]
+
+for num_models in model_counts:
+    experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)

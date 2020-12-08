@@ -53,15 +53,14 @@ class DQNAgent:
                  layers=None,
                  activation="relu",
                  lr=0.00025,
-                 rand=0.0):
+                 rand=0.0, explore=False):
         self.name = name
         self.env = gym.make('CartPole-v1')
         # by default, CartPole-v1 has max episode steps = 500
         self.state_size = self.env.observation_space.shape[0]
         self.action_size = self.env.action_space.n
         self.EPISODES = 1000
-        self.memory = deque(maxlen=50000)
-        
+        self.memory = deque(maxlen=100000 if explore else 50000)
         self.gamma = gamma    # discount rate
         self.epsilon = epsilon  # exploration rate
         self.epsilon_min = epsilon_min
@@ -129,7 +128,7 @@ class DQNAgent:
 
 
     def load(self, name):
-        self.model = load_model(name)
+        self.model = load_model("../data/cartpole/" + name)
 
     def save(self, name):
         self.model.save("../data/cartpole/" + name)
@@ -218,7 +217,7 @@ class DQNAgent:
             while not done:
                 # self.env.render()
                 action = np.argmax(self.model.predict(state))
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, _ = self.env.step(self.env_act_wrapper(action))
                 state = np.reshape(next_state, [1, self.state_size])
                 i += 1
                 if done and i < self.env._max_episode_steps:
@@ -230,6 +229,39 @@ class DQNAgent:
         mean_cum_reward = np.mean(scores)
         print("Eval result: =============================== average reward = {:.5f}".format(mean_cum_reward))
         return mean_cum_reward
+
+    def generate_explorative_data(self, policy_name, size=100000):
+        start = time.time()
+        self.load(policy_name)
+        while len(self.memory) < size:
+            state = self.env.reset()
+            state = np.reshape(state, [1, self.state_size])
+            done = False
+            i = 0
+            while not done:
+                action = self.act(state)
+                next_state, reward, done, _ = self.env.step(self.env_act_wrapper(action))
+                next_state = np.reshape(next_state, [1, self.state_size])
+                if not done or i == self.env._max_episode_steps - 1:
+                    reward = reward
+                else:
+                    reward = -100
+                self.remember(state, action, reward, next_state, done)
+                state = next_state
+                i += 1
+            if len(self.memory) % 10000 == 0:
+                print(F"{len(self.memory)} time steps, {(time.time() - start)*1e4/60/len(self.memory)} min per 10000 time step")
+        self.save_data(self.name)
+
+def generate_data():
+    policy_name = "test500_395.99000.h5"
+    epsilon_mins = [0.2, 0.4, 0.6]
+    for epsilon_min in epsilon_mins:
+        for i in range(10):
+            model_name = F"Explore_data_cartpole_DQN_{epsilon_mins}_{i}"
+            agent = DQNAgent(model_name, epsilon_min=epsilon_min)
+            agent.generate_explorative_data(policy_name)
+
 
 def generate_models():
     name_prefix = "cartpole_DQN_"
@@ -286,8 +318,8 @@ if __name__ == "__main__":
     # agent.test()
 
     # generate_models()
-    generate_random_models()
-
+    # generate_random_models()
+    generate_data()
     # file = open("../data/cartpole/data_teststart", 'rb')
     # d = pickle.load(file)
     # print(d)
