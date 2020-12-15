@@ -13,6 +13,19 @@ from keras.models import Model, load_model
 from keras.layers import Input, Dense
 from keras.optimizers import Adam, RMSprop
 import pickle, time
+import tensorflow as tf
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
 
 MODEL_NAME = "lunarlander"
 
@@ -47,7 +60,7 @@ class DQNAgent:
     def __init__(self, name,
                  batch_size=32,
                  gamma=0.99,
-                 epsilon_decay_steps=20000,
+                 epsilon_decay_steps=50000,
                  train_start=1000,
                  epsilon=1.0,
                  epsilon_min=0.02,
@@ -144,7 +157,7 @@ class DQNAgent:
 
     def run(self, save_points=None):
         if save_points is None:
-            save_points = set([i * 5000 for i in range(6, 21)])
+            save_points = set([i * 2500 for i in range(2, 41)])
 
         print_every = 1000
         start_time = time.time()
@@ -182,7 +195,7 @@ class DQNAgent:
 
 def generate_models():
     name_prefix = F"{MODEL_NAME}_DQN_"
-    layers = [[64, 64], [256, 128, 64]]
+    layers = [[256, 128, 64], [64, 64]]
     activations = ["relu", "tanh"]
     lrs = [0.00025, 0.0005]
 
@@ -193,9 +206,10 @@ def generate_models():
                 name = name_prefix + F"{layer_string}_{activation}_{lr}_"
                 print(name)
                 agent = DQNAgent(name,
-                 epsilon_min=0.02,
+                 epsilon_min=0.1,
                  layers=layer,
                  activation=activation,
+                 batch_size=64,
                  lr=lr)
                 agent.run()
 

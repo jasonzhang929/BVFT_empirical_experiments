@@ -457,5 +457,5 @@ if __name__ == "__main__":
 
     # agent.run() # train as PPO, train every epesode
     #agent.run_batch() # train as PPO, train every batch, trains better
-    agent.run_multiprocesses(num_worker = 12)  # train PPO multiprocessed (fastest)
+    agent.run_multiprocesses(num_worker = 8)  # train PPO multiprocessed (fastest)
     # agent.test()
