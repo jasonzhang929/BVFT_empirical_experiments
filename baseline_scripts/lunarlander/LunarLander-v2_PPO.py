@@ -10,7 +10,7 @@
 #
 #================================================================
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # -1:cpu, 0:first gpu
+os.environ['CUDA_VISIBLE_DEVICES'] = '0' # -1:cpu, 0:first gpu
 import random
 import gym
 import pylab
@@ -457,5 +457,5 @@ if __name__ == "__main__":
 
     # agent.run() # train as PPO, train every epesode
     #agent.run_batch() # train as PPO, train every batch, trains better
-    #agent.run_multiprocesses(num_worker = 8)  # train PPO multiprocessed (fastest)
-    agent.test()
+    agent.run_multiprocesses(num_worker = 12)  # train PPO multiprocessed (fastest)
+    # agent.test()
