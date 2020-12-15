@@ -180,8 +180,9 @@ class DQNAgent:
                 print(F"Saving trained model as {save_name}.h5")
                 self.save(F"{save_name}.h5")
             if t % print_every == 0:
-                print("timesteps: {}, episode: {}, score: {}, e: {:.2}, time: {:.1}".format(t, episodes, last_episode_rewards
-                     , self.epsilon, (time.time() - start_time)/60))
+                print("timesteps: {}, episode: {}, score: {}, e: {:.2}, time: {:.1}".format(t, episodes,
+                     last_episode_rewards, self.epsilon, (time.time() - start_time)/60))
+
 
 def generate_models():
     name_prefix = F"{MODEL_NAME}_DQN_"
