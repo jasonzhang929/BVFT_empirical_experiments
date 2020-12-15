@@ -6,11 +6,24 @@ from os import listdir
 from os.path import isfile, join
 import os
 import matplotlib.pyplot as plt
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+import tensorflow as tf
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
 
 # Define Env Variables
-ENV_NAME = 'cartpole'
+# ENV_NAME = 'cartpole_new'
+ENV_NAME = 'lunarlander'
 GAMMA = 0.99
 RMAX, RMIN = 1.0, -1.0
 PATH = F"data/{ENV_NAME}/"
@@ -100,14 +113,14 @@ def experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutio
     fig_bin.show()
 
 
-model_keywords = ["cartpole_RAND20_DQN", ".h5"]
-data_keywords = ["data_cartpole_RAND20_DQN"]
-data_sizes = [10**n for n in range(3, 6)]
+model_keywords = ["lunarlander_DQN", ".h5", "VALUE"]
+data_keywords = ["DATA"]
+data_sizes = [10**n for n in range(4, 6)] + [2*10**5]
 # data_sizes = [100, 150000]
 resolutions = [1e-1**n for n in range(1, 4)]
-resolutions = [0.5, 0.1, 0.05, 0.01]
+resolutions = [2.0, 0.5, 0.1, 0.05]
 
-model_counts = [5 for j in range(5)]
+model_counts = [20 for j in range(15)]
 
 for num_models in model_counts:
     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)

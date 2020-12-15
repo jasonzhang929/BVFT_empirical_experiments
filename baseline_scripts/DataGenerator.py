@@ -71,6 +71,7 @@ class DataGenAgent():
             child_conns.append(child_conn)
 
         state = [0 for _ in range(num_worker)]
+        epi_length = [0 for _ in range(num_worker)]
         for worker_id, parent_conn in enumerate(parent_conns):
             state[worker_id] = parent_conn.recv()
         start_time = time.time()
@@ -88,13 +89,24 @@ class DataGenAgent():
 
             for worker_id, parent_conn in enumerate(parent_conns):
                 next_state, reward, done, _ = parent_conn.recv()
+
+                # epi_length[worker_id] += 1
+                # if not done or epi_length[worker_id] == self.env._max_episode_steps:
+                #     reward = reward
+                # else:
+                #     reward = -reward
+
                 state[worker_id] = next_state
                 data = (state[worker_id], actions_list[worker_id], reward, next_state, done)
                 self.memory.append(data)
 
-                if done:
-                    if len(self.memory) % print_every == 0:
-                        print(F"TimeSteps: {len(self.memory)}, per {print_every} time: {print_every * (time.time() - start_time)/len(self.memory)}")
+                # if done:
+                #     epi_length[worker_id] = 0
+
+                # if len(self.memory) % print_every == 0:
+                #     print(
+                #         F"TimeSteps: {len(self.memory)}, per {print_every} time: {print_every * (time.time() - start_time) / len(self.memory)}")
+                #
 
         # terminating processes after while loop
         works.append(work)
@@ -134,22 +146,16 @@ def gen_data_directory(env_name, folder_name, threshold, num_data=10, data_size=
 
 
 if __name__ == "__main__":
-    # env_name = 'LunarLander-v2'
-    # MODEL_NAME = 'lunarlander'
-    # name = 'lunarlander_DQN_256_128_64_relu_0.00025_97500.h5'
-
     # env_name = 'CartPole-v1'
-    # MODEL_NAME = 'cartpole_new'
-    # name = 'cartpole_new_DQN_512_256_64_tanh_0.00025_12500.h5'
-    # model_path = F"../data/{MODEL_NAME}/{name}"
-    # ev = RollOutAgent(env_name, model_path, episodes=500)
-    # print(ev.eval(num_worker=8))
+    # folder_name = 'cartpole_new'
 
-    env_name = 'CartPole-v1'
-    folder_name = 'cartpole_new'
-    threshold = 200
-    num_data = 5
+    env_name = 'LunarLander-v2'
+    folder_name = 'lunarlander'
+
+    threshold = 0
+    num_data = 10
     data_size = 50000
     epsilon = 0.2
+    num_worker = 4
 
-    gen_data_directory(env_name, folder_name, threshold, num_data=num_data, data_size=data_size)
+    gen_data_directory(env_name, folder_name, threshold, num_data=num_data, data_size=data_size, num_worker=num_worker)
