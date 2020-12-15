@@ -4,7 +4,7 @@
 import os
 from typing import Any
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 import random
 import gym
 import numpy as np
@@ -72,7 +72,7 @@ class DQNAgent:
         self.epsilon_decay_steps = epsilon_decay_steps
         self.batch_size = batch_size
         self.train_start = train_start
-        self.target_update_freq = 500
+        self.target_update_freq = 200
         self.lr = lr
         self.rand = rand
         self.train_freq = train_freq
@@ -118,7 +118,6 @@ class DQNAgent:
     def replay(self):
         if len(self.memory) < self.train_start:
             return
-
         state, action, reward, next_state, done = self.sample(self.batch_size)
 
         # do batch prediction to save speed
@@ -130,7 +129,6 @@ class DQNAgent:
 
         # Train the Neural Network with batches
         self.model.fit(state, target, batch_size=self.batch_size, verbose=0)
-
 
     def load(self, name):
         self.model = load_model(F"../data/{MODEL_NAME}/{name}")
@@ -146,7 +144,7 @@ class DQNAgent:
 
     def run(self, save_points=None):
         if save_points is None:
-            save_points = set([i * 10000 for i in range(3, 11)])
+            save_points = set([i * 5000 for i in range(6, 21)])
 
         print_every = 1000
         start_time = time.time()
@@ -169,6 +167,7 @@ class DQNAgent:
 
             if t % self.train_freq == 0:
                 self.replay()
+
             if t > self.train_start and t % self.target_update_freq == 0:
                 self.target.set_weights(self.model.get_weights())
 
@@ -183,7 +182,7 @@ class DQNAgent:
 
 def generate_models():
     name_prefix = F"{MODEL_NAME}_DQN_"
-    layers = [[256, 128, 64], [64, 64]]
+    layers = [[64, 64], [256, 128, 64]]
     activations = ["relu", "tanh"]
     lrs = [0.00025, 0.0005]
 
