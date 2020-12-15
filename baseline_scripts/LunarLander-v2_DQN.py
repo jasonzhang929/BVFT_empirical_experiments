@@ -4,7 +4,7 @@
 import os
 from typing import Any
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import random
 import gym
 import numpy as np
@@ -113,7 +113,7 @@ class DQNAgent:
         if np.random.random() <= self.epsilon:
             return random.randrange(self.action_size)
         else:
-            return np.argmax(self.model.predict(state))
+            return np.argmax(self.model.predict(np.stack([state])))
 
     def replay(self):
         if len(self.memory) < self.train_start:
@@ -124,7 +124,7 @@ class DQNAgent:
         # do batch prediction to save speed
         target = self.target.predict(state)
         target_next = self.target.predict(next_state)
-        target_next = reward + self.gamma * (np.max(target_next, axis=-1))
+        target_next = reward + np.ndarray.flatten(self.gamma * (np.max(target_next, axis=-1)))
         target_next[done] = reward[done]
         target[np.arange(len(target_next)), action] = target_next
 
@@ -151,7 +151,6 @@ class DQNAgent:
         print_every = 1000
         start_time = time.time()
         state = self.env.reset()
-        state = np.reshape(state, [1, self.state_size])
         episodes = 0
         cum_rewards = 0.0
         last_episode_rewards = 0.0
@@ -159,20 +158,18 @@ class DQNAgent:
         for t in range(self.total_timesteps):
             action = self.act(state)
             next_state, reward, done, _ = self.env.step(self.env_act_wrapper(action))
-            next_state = np.reshape(next_state, [1, self.state_size])
             self.remember(state, action, reward, next_state, done)
             state = next_state
             cum_rewards += reward
             if done:
                 state = self.env.reset()
-                state = np.reshape(state, [1, self.state_size])
                 episodes += 1
                 last_episode_rewards = cum_rewards
                 cum_rewards = 0.0
 
             if t % self.train_freq == 0:
                 self.replay()
-            if t > self.train_start and  t % self.target_update_freq == 0:
+            if t > self.train_start and t % self.target_update_freq == 0:
                 self.target.set_weights(self.model.get_weights())
 
             if t in save_points:
@@ -195,7 +192,7 @@ def generate_models():
             for activation in activations:
                 name = name_prefix + F"{layer_string}_{activation}_{lr}_"
                 print(name)
-                agent = DQNAgent(name, batch_size=64,
+                agent = DQNAgent(name,
                  epsilon_min=0.02,
                  layers=layer,
                  activation=activation,
