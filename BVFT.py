@@ -1,12 +1,10 @@
 import numpy as np
-import os
-import matplotlib.pyplot as plt
-import random
-from collections import Counter
+from BvftUtil import BvftRecord
 
 
 class BVFT(object):
-    def __init__(self, q_functions, data, gamma, rmax, rmin, tabular=False, verbose=False, bins=None,
+    def __init__(self, q_functions, data, gamma, rmax, rmin, record: BvftRecord = BvftRecord(), tabular=False,
+                 verbose=False, bins=None,
                  profiling=False):
         self.data = data
         self.n = len(data)
@@ -25,8 +23,10 @@ class BVFT(object):
         self.q_sa = []
         self.r_plus_vfsp = []
         self.q_functions = q_functions
+        self.record = record
 
-        print(F"Data size = {self.n}")
+        if self.verbose:
+            print(F"Data size = {self.n}")
         rewards = np.array([t[2] for t in self.data])
 
         actions = [int(t[1]) for t in self.data]
@@ -46,6 +46,7 @@ class BVFT(object):
                 self.q_sa.append(np.array([qs[i][actions[i]] for i in range(self.n)]))
                 vfsp = np.max(Q.predict(next_states), axis=1)
                 self.r_plus_vfsp.append(rewards + self.gamma * vfsp)
+        self.record.avg_q = [np.sum(qsa) for qsa in self.q_sa]
 
     def discretize(self):
         self.q_sa_discrete = []
@@ -88,48 +89,66 @@ class BVFT(object):
             Tf[group] = np.mean(Tf[group])
         diff = self.q_sa[q1] - Tf
         return np.sqrt(np.sum(diff ** 2))
+        return
 
     def get_bins(self, groups):
         group_sizes = [len(g) for g in groups]
         bin_ind = np.digitize(group_sizes, self.bins, right=True)
-        bins = np.zeros(len(self.bins) + 1)
+        percent_bins = np.zeros(len(self.bins) + 1)
+        count_bins = np.zeros(len(self.bins) + 1)
         for i in range(len(group_sizes)):
-            bins[bin_ind[i] + 1] += group_sizes[i]
-        bins[0] = self.n - np.sum(bins)
-        return bins
+            count_bins[bin_ind[i] + 1] += 1
+            percent_bins[bin_ind[i] + 1] += group_sizes[i]
+        percent_bins[0] = self.n - np.sum(percent_bins)
+        count_bins[0] = percent_bins[0]
+        return percent_bins, count_bins
 
     def run(self, resolution=1e-2):
         self.res = resolution
-        print(F"Being discretizing outputs of Q functions on batch data with resolution = {resolution}")
+        if self.verbose:
+            print(F"Being discretizing outputs of Q functions on batch data with resolution = {resolution}")
         self.discretize()
-        print("Starting pairwise comparison")
-        histos = []
+        if self.verbose:
+            print("Starting pairwise comparison")
+        percent_histos = []
+        count_histos = []
+        group_count = []
         loss_matrix = np.zeros((self.q_size, self.q_size))
         for q1 in range(self.q_size):
             for q2 in range(q1, self.q_size):
                 groups = self.get_groups(q1, q2)
-                histos.append(self.get_bins(groups))
+                percent_bins, count_bins = self.get_bins(groups)
+                percent_histos.append(percent_bins)
+                count_histos.append(count_bins)
+                group_count.append(len(groups))
 
                 loss_matrix[q1, q2] = self.compute_loss(q1, groups)
-                if self.verbose:
-                    print("loss |Q{}; Q{}| = {}".format(q1, q2, loss_matrix[q1, q2]))
+                # if self.verbose:
+                #     print("loss |Q{}; Q{}| = {}".format(q1, q2, loss_matrix[q1, q2]))
 
                 if q1 != q2:
                     loss_matrix[q2, q1] = self.compute_loss(q2, groups)
-                    if self.verbose:
-                        print("loss |Q{}; Q{}| = {}".format(q2, q1, loss_matrix[q2, q1]))
+                    # if self.verbose:
+                    #     print("loss |Q{}; Q{}| = {}".format(q2, q1, loss_matrix[q2, q1]))
 
-        q_ranks = np.argsort(np.max(loss_matrix, axis=1))
-        bin_histo = np.mean(histos, axis=0)/self.n
-
-        print("Ranking of Q functions:")
-        print(q_ranks)
-
-        return q_ranks, loss_matrix, bin_histo
+        average_percent_bins = np.mean(np.array(percent_histos), axis=0) / self.n
+        average_count_bins = np.mean(np.array(count_histos), axis=0)
+        average_group_count = np.mean(group_count)
+        if self.verbose:
+            print(np.max(loss_matrix, axis=1))
+        self.record.resolutions.append(resolution)
+        self.record.losses.append(np.max(loss_matrix, axis=1))
+        self.record.loss_matrices.append(loss_matrix)
+        self.record.percent_bin_histogram.append(average_percent_bins)
+        self.record.count_bin_histogram.append(average_count_bins)
+        self.record.group_counts.append(average_group_count)
 
     def get_br_ranking(self):
         br = [np.sqrt(np.sum((self.q_sa[q] - self.r_plus_vfsp[q]) ** 2)) for q in range(self.q_size)]
-        return np.argsort(br)
+        br_rank = np.argsort(br)
+        self.record.bellman_residual = br
+        return br_rank
+
 
 if __name__ == '__main__':
     # Toy example in the paper
@@ -143,6 +162,6 @@ if __name__ == '__main__':
 
     gamma = 0.9
     rmax, rmin = 1.0, 0.0
-
-    b = BVFT([Q1, Q2], test_data, gamma, rmax, rmin, tabular=True, verbose=True)
+    record = BvftRecord()
+    b = BVFT([Q1, Q2], test_data, gamma, rmax, rmin, record, tabular=True, verbose=True)
     b.run()
