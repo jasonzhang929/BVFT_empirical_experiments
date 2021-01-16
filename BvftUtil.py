@@ -5,6 +5,7 @@ from scipy.stats import pearsonr, sem
 import gym
 from collections import OrderedDict
 
+
 class BvftRecord(object):
     def __init__(self,
                  data_size=None,
@@ -276,8 +277,10 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
                                  np.random.shuffle(np.arange(record.model_count-1)) if exclude_q_star else np.random.shuffle(np.arange(record.model_count))))
         ranker_loss_list.append(("1 sample BR",
                                  record.bellman_residual[:-1] if exclude_q_star else record.bellman_residual))
-        ranker_loss_list.append(("|Q-Q*|", record.q_star_diff[:-1] if exclude_q_star else record.q_star_diff))
-        ranker_loss_list.append(("|Q-TQ|", record.bellman_error[:-1] if exclude_q_star else record.bellman_error))
+        if record.q_star_diff is not None:
+            ranker_loss_list.append(("|Q-Q*|", record.q_star_diff[:-1] if exclude_q_star else record.q_star_diff))
+        if record.bellman_error is not None:
+            ranker_loss_list.append(("|Q-TQ|", record.bellman_error[:-1] if exclude_q_star else record.bellman_error))
         ranker_loss_list.append(("Avg(Q(s,a))", -np.array(record.avg_q[:-1]) if exclude_q_star else -np.array(record.avg_q)))
         if auto_res:
             auto_loss = []
@@ -306,6 +309,8 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
         if bot:
             axs[i].set_xlabel("k")
         for ranker in ranker_metrics:
+            if len(ranker_metrics[ranker]) == 0:
+                continue
             aggregated_metrics = np.mean(np.array(ranker_metrics[ranker]), axis=0)
             metrics_error = sem(np.array(ranker_metrics[ranker]), axis=0)
             axs[i].errorbar(ks, aggregated_metrics[i], yerr=metrics_error[i], linestyle='--', marker='o', label=ranker)

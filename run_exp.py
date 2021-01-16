@@ -116,11 +116,11 @@ def experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutio
 model_keywords = ["lunarlander_DQN", ".h5", "VALUE"]
 data_keywords = ["DATA"]
 data_sizes = [10**n for n in range(4, 6)] + [2*10**5]
-# data_sizes = [100, 150000]
+
 resolutions = [1e-1**n for n in range(1, 4)]
 resolutions = [2.0, 0.5, 0.1, 0.05]
 
-model_counts = [20 for j in range(15)]
+model_counts = [5 for j in range(15)]
 
 for num_models in model_counts:
     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)
