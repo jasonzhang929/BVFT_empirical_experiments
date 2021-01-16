@@ -198,7 +198,7 @@ def run_experiment_2(num_runs):
 
 
 def experiment3(model_count, folder="", auto_res=False):
-    record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
+    record_files = get_file_names([ENV_NAME + "_"], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
     data_sizes = [500, 5000, 50000]
     data_explore_rates = [0.1, 0.5, 1.0]
@@ -244,7 +244,7 @@ def experiment3(model_count, folder="", auto_res=False):
 
 def fill_bellman_error():
     mem = {}
-    record_files = get_file_names([ENV_NAME], path="data/bvft/")
+    record_files = get_file_names([ENV_NAME + "_"], path="data/bvft/")
     T = np.load(dir_path + F"/data/{ENV_NAME}/ENV_T_epsilon_0.001.npy")
     R = np.load(dir_path + F"/data/{ENV_NAME}/ENV_R_epsilon_0.001.npy")
     for file in record_files:
@@ -377,13 +377,13 @@ if __name__ == '__main__':
     # for num_models in model_counts:
     #     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)
 
-    tm = time.time()
-    for i in range(10):
-        print(F"I {i} {(time.time() - tm)/3600}")
-        run_experiment_2(30)
+    # tm = time.time()
+    # for i in range(10):
+    #     print(F"I {i} {(time.time() - tm)/3600}")
+    #     run_experiment_2(30)
 
-    # fill_bellman_error()
-    # experiment3(15, auto_res=True, folder="")
+    fill_bellman_error()
+    experiment3(15, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

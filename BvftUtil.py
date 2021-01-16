@@ -263,6 +263,7 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
     ranker_list = ["Random", "1 sample BR", "|Q-Q*|", "|Q-TQ|", "Avg(Q(s,a))"]
     if auto_res:
         ranker_list.append("BVFT auto")
+        ranker_list.append("BVFT Skyline")
         metrics_names = [n + ", bvft auto resolution" for n in metrics_names]
     else:
         ranker_list += [F"BVFT res={res}" for res in resolutions]
@@ -281,6 +282,7 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
             ranker_loss_list.append(("|Q-Q*|", record.q_star_diff[:-1] if exclude_q_star else record.q_star_diff))
         if record.bellman_error is not None:
             ranker_loss_list.append(("|Q-TQ|", record.bellman_error[:-1] if exclude_q_star else record.bellman_error))
+
         ranker_loss_list.append(("Avg(Q(s,a))", -np.array(record.avg_q[:-1]) if exclude_q_star else -np.array(record.avg_q)))
         if auto_res:
             auto_loss = []
@@ -290,6 +292,12 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
                     loss = np.max(record.loss_matrices[i][:-1, :-1], axis=1)
                 auto_loss.append(loss + c * res)
             ranker_loss_list.append((F"BVFT auto", np.min(auto_loss, axis=0)))
+
+            if record.optimal_grouping_skyline is not None and len(record.optimal_grouping_skyline) > 0:
+                auto_loss_skyline = []
+                for i, res in enumerate(record.resolutions):
+                    auto_loss_skyline.append(record.optimal_grouping_skyline[i] + c * res)
+                ranker_loss_list.append((F"BVFT Skyline", np.min(auto_loss_skyline, axis=0)))
         else:
             for i, res in enumerate(record.resolutions):
                 loss = record.losses[i]

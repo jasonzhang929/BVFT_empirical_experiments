@@ -88,7 +88,7 @@ class BVFT(object):
         for group in groups:
             Tf[group] = np.mean(Tf[group])
         diff = self.q_sa[q1] - Tf
-        # return np.sqrt(np.mean(diff ** 2))
+        return np.sqrt(np.mean(diff ** 2))
 
     def get_bins(self, groups):
         group_sizes = [len(g) for g in groups]
