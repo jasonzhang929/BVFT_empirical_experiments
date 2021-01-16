@@ -167,6 +167,7 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
         for i, res in enumerate(resolutions):
             bvft.run(resolution=res)
+            bvft.compute_optimal_group_skyline()
         bvft.get_br_ranking()
         records.append(record)
         if run > 0 and run % 10 == 0:
@@ -376,13 +377,13 @@ if __name__ == '__main__':
     # for num_models in model_counts:
     #     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)
 
-    # tm = time.time()
-    # for i in range(10):
-    #     print(F"I {i} {(time.time() - tm)/3600}")
-    #     run_experiment_2(30)
+    tm = time.time()
+    for i in range(10):
+        print(F"I {i} {(time.time() - tm)/3600}")
+        run_experiment_2(30)
 
-    fill_bellman_error()
-    experiment3(15, auto_res=True, folder="")
+    # fill_bellman_error()
+    # experiment3(15, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

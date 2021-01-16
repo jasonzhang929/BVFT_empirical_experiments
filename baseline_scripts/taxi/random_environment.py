@@ -1,11 +1,11 @@
 import numpy as np
 
-
 class TaxiRandom(object):
     n_state = 0
     n_action = 6
 
-    def __init__(self, length):
+    def __init__(self, length, epsilon):
+        self.epsilon = epsilon
         self.length = length
         self.x = np.random.randint(length)
         self.y = np.random.randint(length)
@@ -101,6 +101,8 @@ class TaxiRandom(object):
 
     def step(self, action):
         reward = -1
+        if np.random.rand() < self.epsilon:
+            action = np.random.randint(6)
 
         if action == 0:
             if self.x < self.length - 1:

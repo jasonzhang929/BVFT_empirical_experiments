@@ -88,8 +88,7 @@ class BVFT(object):
         for group in groups:
             Tf[group] = np.mean(Tf[group])
         diff = self.q_sa[q1] - Tf
-        return np.sqrt(np.sum(diff ** 2))
-        return
+        # return np.sqrt(np.mean(diff ** 2))
 
     def get_bins(self, groups):
         group_sizes = [len(g) for g in groups]
@@ -142,6 +141,13 @@ class BVFT(object):
         self.record.percent_bin_histogram.append(average_percent_bins)
         self.record.count_bin_histogram.append(average_count_bins)
         self.record.group_counts.append(average_group_count)
+
+
+    def compute_optimal_group_skyline(self):
+        groups = self.get_groups(self.q_size-1, self.q_size-1)
+        loss = [self.compute_loss(q, groups) for q in range(self.q_size)]
+        self.record.optimal_grouping_skyline.append(np.array(loss))
+
 
     def get_br_ranking(self):
         br = [np.sqrt(np.sum((self.q_sa[q] - self.r_plus_vfsp[q]) ** 2)) for q in range(self.q_size)]
