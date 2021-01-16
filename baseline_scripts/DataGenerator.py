@@ -139,7 +139,7 @@ def gen_data_directory(env_name, folder_name, threshold, num_data=10, data_size=
 
         data_gen.generate_data(num_worker=num_worker)
 
-        new_name = "DATA_{}_VAL_{:.5}.h5".format(np.random.randint(10**6), value)
+        new_name = "DATA_{}_EPS_{:.5}.h5".format(np.random.randint(10**6), epsilon)
         new_path = F"../data/{folder_name}/{new_name}"
         data_gen.save_data(new_path)
         print(F"Data saved at {new_name}")
@@ -149,13 +149,17 @@ if __name__ == "__main__":
     # env_name = 'CartPole-v1'
     # folder_name = 'cartpole_new'
 
-    env_name = 'LunarLander-v2'
-    folder_name = 'lunarlander'
+    # env_name = 'LunarLander-v2'
+    # folder_name = 'lunarlander'
 
-    threshold = 0
-    num_data = 10
-    data_size = 50000
-    epsilon = 0.2
+    env_name = 'Acrobot-v1'
+    folder_name = 'acrobot'
+
+    threshold = -100
+    num_data = 9
+    data_size = 100000
+    epsilons = [0.5, 1.0]
     num_worker = 4
-
-    gen_data_directory(env_name, folder_name, threshold, num_data=num_data, data_size=data_size, num_worker=num_worker)
+    for epsilon in epsilons:
+        gen_data_directory(env_name, folder_name, threshold, num_data=num_data, data_size=data_size, num_worker=num_worker,
+                       epsilon=epsilon)
