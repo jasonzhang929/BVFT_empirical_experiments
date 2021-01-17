@@ -182,7 +182,7 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
 
 def run_experiment_2(num_runs):
-    num_models = [15, 20]
+    num_models = [15]
     data_sizes = [500, 5000, 50000]
 
     data_explore_rates = [0.1, 0.5, 1.0]
@@ -222,10 +222,10 @@ def experiment3(model_count, folder="", auto_res=False):
             top, bot, left, right = i == 0, i == len(data_sizes) - 1, False, False
             plot_loc = (top, bot, left, right)
             plot_top_k_metrics(axs[i][:2], matched_records, exclude_q_star=not include_q_star, plot_loc=plot_loc,
-                               auto_res=False, include_avgqsa=False)
+                               auto_res=False, include_avgqsa=False, include_random=False)
             if auto_res:
                 plot_top_k_metrics(axs[i][2:], matched_records, exclude_q_star=not include_q_star, plot_loc=plot_loc,
-                                   auto_res=auto_res, include_avgqsa=False)
+                                   auto_res=auto_res, include_avgqsa=False, include_random=False)
             axs[i, 0].set_ylabel(F"|D| = {data_size}")
             for j, record in enumerate(random.sample(matched_records, k)):
                 top, bot, left, right = j == 0, j == k - 1, i == 0, i == len(data_sizes) - 1
@@ -349,7 +349,7 @@ if __name__ == '__main__':
     RMAX, RMIN = 20.0, -10.0
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
-    include_q_star = True
+    include_q_star = False
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
     data_explore_rate = 1.0
@@ -382,7 +382,7 @@ if __name__ == '__main__':
     #     print(F"I {i} {(time.time() - tm)/3600}")
     #     run_experiment_2(30)
 
-    fill_bellman_error()
+    # fill_bellman_error()
     experiment3(15, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
