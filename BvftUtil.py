@@ -245,7 +245,8 @@ def plot_performance_and_q_vs_loss_scatter(axs, record: BvftRecord, resolution, 
         axs2.plot(x, y, 'yo', x, poly1d_fn(x), '--k', color=color2)
 
 
-def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=None, plot_loc=None, auto_res=False, include_avgqsa=True):
+def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=None, plot_loc=None, auto_res=False,
+                       include_avgqsa=True, include_random=True):
     c = 1.0
     if plot_loc is None:
         plot_loc = (False, False, False, False)
@@ -296,7 +297,10 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
             if record.optimal_grouping_skyline is not None and len(record.optimal_grouping_skyline) > 0:
                 auto_loss_skyline = []
                 for i, res in enumerate(record.resolutions):
-                    auto_loss_skyline.append(record.optimal_grouping_skyline[i] + c * res)
+                    loss = record.optimal_grouping_skyline[i]
+                    if exclude_q_star:
+                        loss = loss[:-1]
+                    auto_loss_skyline.append(loss + c * res)
                 ranker_loss_list.append((F"BVFT Skyline", np.min(auto_loss_skyline, axis=0)))
         else:
             for i, res in enumerate(record.resolutions):
@@ -310,6 +314,8 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
             ranker_metrics[ranker].append(metrics)
     if not include_avgqsa:
         ranker_metrics.pop("Avg(Q(s,a))")
+    if not include_random:
+        ranker_metrics.pop("Random")
 
     for i, metrics_name in enumerate(metrics_names):
         if top:
