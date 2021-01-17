@@ -246,7 +246,7 @@ def plot_performance_and_q_vs_loss_scatter(axs, record: BvftRecord, resolution, 
 
 
 def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=None, plot_loc=None, auto_res=False, include_avgqsa=True):
-    c = 1.0
+    c = 0.1
     if plot_loc is None:
         plot_loc = (False, False, False, False)
     top, bot, left, right = plot_loc
@@ -290,6 +290,7 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
                 loss = record.losses[i]
                 if exclude_q_star:
                     loss = np.max(record.loss_matrices[i][:-1, :-1], axis=1)
+                loss /= np.sqrt(record.data_size)
                 auto_loss.append(loss + c * res)
             ranker_loss_list.append((F"BVFT auto", np.min(auto_loss, axis=0)))
 

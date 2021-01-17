@@ -206,11 +206,10 @@ def experiment3(model_count, folder="", auto_res=False):
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
-        text = "Q* included" if include_q_star else "Q* excluded"
         fig, axs = get_subplots(len(data_sizes), 4 if auto_res else 2,
-                                F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
+                                F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}")
         fig_res, axs_res = get_subplots(k, len(data_sizes),
-                                        F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
+                                        F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}")
         for i, data_size in enumerate(data_sizes):
             record_matcher = BvftRecord(data_size=data_size, data_explore_rate=data_explore_rate, gamma=GAMMA,
                                         model_count=model_count)
@@ -348,7 +347,7 @@ if __name__ == '__main__':
     RMAX, RMIN = 0.0, -1.0
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
-    include_q_star = False
+    include_q_star = True
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
     data_explore_rate = 1.0
@@ -381,7 +380,7 @@ if __name__ == '__main__':
     #     run_experiment_2(30)
 
     # fill_bellman_error()
-    experiment3(10, auto_res=True, folder="")
+    experiment3(15, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

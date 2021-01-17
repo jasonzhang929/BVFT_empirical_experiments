@@ -348,7 +348,7 @@ if __name__ == '__main__':
     RMAX, RMIN = 10, -100
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
-    include_q_star = False
+    include_q_star = True
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
     data_explore_rate = 1.0

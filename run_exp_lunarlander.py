@@ -206,11 +206,11 @@ def experiment3(model_count, folder="", auto_res=False):
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
-        text = "Q* included" if include_q_star else "Q* excluded"
+
         fig, axs = get_subplots(len(data_sizes), 4 if auto_res else 2,
-                                F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
+                                F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}")
         fig_res, axs_res = get_subplots(k, len(data_sizes),
-                                        F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
+                                        F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}")
         for i, data_size in enumerate(data_sizes):
             record_matcher = BvftRecord(data_size=data_size, data_explore_rate=data_explore_rate, gamma=GAMMA,
                                         model_count=model_count)
