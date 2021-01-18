@@ -247,8 +247,7 @@ def plot_performance_and_q_vs_loss_scatter(axs, record: BvftRecord, resolution, 
 
 
 def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=None, plot_loc=None, auto_res=False,
-                       include_avgqsa=True, include_random=True):
-    c = 1.0
+                       include_avgqsa=True, include_random=True, c=0.1):
     if plot_loc is None:
         plot_loc = (False, False, False, False)
     top, bot, left, right = plot_loc
@@ -276,8 +275,9 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
         if exclude_q_star:
             values = values[:-1]
         ranker_loss_list = []
-        ranker_loss_list.append(("Random",
-                                 np.random.shuffle(np.arange(record.model_count-1)) if exclude_q_star else np.random.shuffle(np.arange(record.model_count))))
+        random_loss = np.arange(record.model_count-1) if exclude_q_star else np.arange(record.model_count)
+        np.random.shuffle(random_loss)
+        ranker_loss_list.append(("Random", random_loss))
         ranker_loss_list.append(("1 sample BR",
                                  record.bellman_residual[:-1] if exclude_q_star else record.bellman_residual))
         if record.q_star_diff is not None:

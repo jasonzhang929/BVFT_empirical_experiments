@@ -117,13 +117,13 @@ def gen_data_directory(env_name, folder_name, threshold, num_data=10, data_size=
 
 
 if __name__ == "__main__":
-    env_name = 'MountainCar-v1'
-    folder_name = F'mountaincar'
+    env_name = 'MountainCar-v0'
+    folder_name = 'mountaincar'
 
     threshold = -100
-    num_data = 9
+    num_data = 10
     data_size = 100000
-    epsilons = [0.5, 1.0]
+    epsilons = [0.1, 0.5, 1.0]
     num_worker = 4
     for epsilon in epsilons:
         gen_data_directory(env_name, folder_name, threshold, num_data=num_data, data_size=data_size, num_worker=num_worker,

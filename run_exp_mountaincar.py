@@ -202,7 +202,7 @@ def experiment3(model_count, folder="", auto_res=False, c=0.1):
     record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
     data_sizes = [500, 5000, 50000]
-    data_explore_rates = [0.2]
+    data_explore_rates = [0.1, 0.5, 1.0]
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
@@ -335,10 +335,7 @@ def experiment4(num_model):
 
 
 if __name__ == '__main__':
-    # ENV_NAME = 'taxi-random-0.5'
-    # optimal_q_name = "OPTIMAL_Q_GAMMA_0.99_VALUE_-0.43706.npy"
-
-    ENV_NAME = 'cartpole_new'
+    ENV_NAME = 'mountaincar'
     optimal_q_name = ""
 
 
@@ -350,16 +347,16 @@ if __name__ == '__main__':
     include_q_star = True
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
-    data_explore_rate = 1.0
+    data_explore_rate = 0.1
     model_keywords = ["DQN", "VALUE", ".h5"]
     data_keywords = ["DATA"]
     data_sizes = [500, 5000, 50000]
 
     resolutions = np.array([0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0])
 
-    model_counts = [10, 15]
-    model_up = 500
-    model_low = 200
+    model_counts = [15]
+    model_up = 0.0
+    model_low = -800
 
     # data_names = get_file_names(data_keywords)
     # dataset = get_data(data_names, size=100000)
@@ -380,7 +377,7 @@ if __name__ == '__main__':
     #     run_experiment_2(30)
 
     # fill_bellman_error()
-    experiment3(15, auto_res=True, folder="")
-    # for num_model in model_counts:
-    #     experiment4(num_model)
+    # experiment3(15, auto_res=True, folder="")
+    for num_model in model_counts:
+        experiment4(num_model)
     # generate_more_q(count=1)

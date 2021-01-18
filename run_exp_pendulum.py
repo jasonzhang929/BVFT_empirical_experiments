@@ -154,8 +154,8 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
         q_functions, values, q_names = get_models(model_names, n=num_model, must_include=optimal_q_name)
         # optimal_q = q_functions[-1]
         # q_star_diff = np.array([np.linalg.norm(optimal_q - q, 2) for q in q_functions])
-        data_keywords = ["DATA", str(data_explore_rate)]
-        data_keywords = ["DATA"]
+        data_keywords = ["DATA", "EPS_" + str(data_explore_rate)]
+        # data_keywords = ["DATA"]
         data_names = get_file_names(data_keywords)
         dataset = get_data(data_names, size=max(data_sizes))
         data_start = np.random.randint(len(dataset) - data_size)
@@ -183,13 +183,13 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
 
 def run_experiment_2(num_runs):
-    num_models = [10, 15]
+    num_models = [15]
     data_sizes = [500, 5000, 50000]
 
-    data_explore_rates = [0.2]
-    resolutions = {5000: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0],
-                   500: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0],
-                   50000: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0]}
+    data_explore_rates = [0.1, 0.5, 1.0]
+    resolutions = {5000: [0.1, 0.5, 1.0, 3.0, 6.0, 10.0, 20.0],
+                   500: [0.1, 0.5, 1.0, 3.0, 6.0, 10.0, 20.0],
+                   50000: [0.1, 0.5, 1.0, 3.0, 6.0, 10.0, 20.0]}
 
     for num_model in num_models:
         for data_explore_rate in data_explore_rates:
@@ -202,7 +202,7 @@ def experiment3(model_count, folder="", auto_res=False, c=0.1):
     record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
     data_sizes = [500, 5000, 50000]
-    data_explore_rates = [0.2]
+    data_explore_rates = [0.1, 0.5, 1.0]
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
@@ -338,28 +338,28 @@ if __name__ == '__main__':
     # ENV_NAME = 'taxi-random-0.5'
     # optimal_q_name = "OPTIMAL_Q_GAMMA_0.99_VALUE_-0.43706.npy"
 
-    ENV_NAME = 'cartpole_new'
+    ENV_NAME = 'pendulum'
     optimal_q_name = ""
 
 
     PATH = F"data/{ENV_NAME}/"
     GAMMA = 0.99
-    RMAX, RMIN = 10, -100
+    RMAX, RMIN = 100.0, -100.0
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     include_q_star = True
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
-    data_explore_rate = 1.0
+    data_explore_rate = 0.1
     model_keywords = ["DQN", "VALUE", ".h5"]
     data_keywords = ["DATA"]
     data_sizes = [500, 5000, 50000]
 
-    resolutions = np.array([0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0])
+    resolutions = np.array([0.1, 0.5, 1.0, 3.0, 6.0, 10.0, 20.0])
 
-    model_counts = [10, 15]
-    model_up = 500
-    model_low = 200
+    model_counts = [10]
+    model_up = 0.0
+    model_low = -1000
 
     # data_names = get_file_names(data_keywords)
     # dataset = get_data(data_names, size=100000)

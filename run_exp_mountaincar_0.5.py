@@ -183,13 +183,13 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
 
 def run_experiment_2(num_runs):
-    num_models = [10, 15]
+    num_models = [15]
     data_sizes = [500, 5000, 50000]
 
-    data_explore_rates = [0.2]
-    resolutions = {5000: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0],
-                   500: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0],
-                   50000: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0]}
+    data_explore_rates = [0.1, 0.5, 1.0]
+    resolutions = {5000: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
+                   500: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
+                   50000: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]}
 
     for num_model in num_models:
         for data_explore_rate in data_explore_rates:
@@ -202,7 +202,7 @@ def experiment3(model_count, folder="", auto_res=False, c=0.1):
     record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
     data_sizes = [500, 5000, 50000]
-    data_explore_rates = [0.2]
+    data_explore_rates = [0.1, 0.5, 1.0]
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
@@ -335,31 +335,28 @@ def experiment4(num_model):
 
 
 if __name__ == '__main__':
-    # ENV_NAME = 'taxi-random-0.5'
-    # optimal_q_name = "OPTIMAL_Q_GAMMA_0.99_VALUE_-0.43706.npy"
-
-    ENV_NAME = 'cartpole_new'
+    ENV_NAME = 'mountaincar-0.5'
     optimal_q_name = ""
 
 
     PATH = F"data/{ENV_NAME}/"
     GAMMA = 0.99
-    RMAX, RMIN = 10, -100
+    RMAX, RMIN = 10, -10
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     include_q_star = True
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
-    data_explore_rate = 1.0
+    data_explore_rate = 0.1
     model_keywords = ["DQN", "VALUE", ".h5"]
     data_keywords = ["DATA"]
     data_sizes = [500, 5000, 50000]
 
-    resolutions = np.array([0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0])
+    resolutions = np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
 
-    model_counts = [10, 15]
-    model_up = 500
-    model_low = 200
+    model_counts = [15]
+    model_up = 0.0
+    model_low = -800
 
     # data_names = get_file_names(data_keywords)
     # dataset = get_data(data_names, size=100000)
