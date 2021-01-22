@@ -1,9 +1,11 @@
 import gym
-import d4rl # Import required to register environments
+import d4rl
 import numpy as np
 
 # Create the environment
 env = gym.make('minigrid-fourrooms-v0')
+print(env.observation_space.shape)
+print(env.action_space.n)
 
 # d4rl abides by the OpenAI gym interface
 env.reset()
@@ -16,7 +18,7 @@ print(env.step(env.action_space.sample()))
 #
 # # Alternatively, use d4rl.qlearning_dataset which
 # # also adds next_observations.
-# dataset = d4rl.qlearning_dataset(env)
-# print(np.shape(dataset['observations'][0]))
-# print(dataset['actions'][:10])
-# print(dataset.keys())
+dataset = d4rl.qlearning_dataset(env)
+print(np.shape(dataset['observations'][0]))
+print(dataset['actions'][:10])
+print(dataset.keys())

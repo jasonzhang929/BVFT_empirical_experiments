@@ -167,7 +167,7 @@ def plot_metric_vs_bellman_residual_plot(axs, record: BvftRecord, resolution, me
     axs.legend()
 
 
-def plot_bvft_loss_vs_resolution_plot(axs, record: BvftRecord, plot_loc=None, exclude_q_star=False, model_count=5):
+def plot_bvft_loss_vs_resolution_plot(axs, record: BvftRecord, plot_loc=None, exclude_q_star=False, model_count=5, show_model_name=False):
     if plot_loc is None:
         plot_loc = (False, False, False, False)
     losses = []
@@ -193,7 +193,9 @@ def plot_bvft_loss_vs_resolution_plot(axs, record: BvftRecord, plot_loc=None, ex
         axs.set_xlabel("resolution")
     axs.set_xticks(sorted_res)
     for model in models_to_plot:
-        axs.plot(sorted_res, [loss[model] for loss in losses])
+        axs.plot(sorted_res, [loss[model] for loss in losses], label=record.q_names[model].split("_")[-3])
+    if show_model_name:
+        axs.legend()
 
 
 def plot_performance_and_q_vs_loss_scatter(axs, record: BvftRecord, resolution, q_diff, plot_loc=None, plot=True, fit=False):
@@ -271,7 +273,7 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
     ranker_metrics = OrderedDict([(name, []) for name in ranker_list])
 
     for record in records:
-        values = record.model_values
+        values = np.array(record.model_values)
         if exclude_q_star:
             values = values[:-1]
         ranker_loss_list = []

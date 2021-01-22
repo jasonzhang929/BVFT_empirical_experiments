@@ -63,7 +63,7 @@ class RollOutAgent():
         works, parent_conns, child_conns = [], [], []
         for idx in range(num_worker):
             parent_conn, child_conn = Pipe()
-            work = Environment(idx, child_conn, self.env_name, self.state_size[0], self.action_size, True)
+            work = Environment(idx, child_conn, self.env_name, self.state_size[0], self.action_size)
             work.start()
             works.append(work)
             parent_conns.append(parent_conn)
@@ -116,7 +116,7 @@ class RollOutAgent():
         self.model.save(path)
 
 
-def eval_directory(env_name, folder_name, episodes=100, num_worker=8):
+def eval_directory(env_name, folder_name, episodes=100, num_worker=4):
     dir_path = F"../data/{folder_name}/"
     onlyfiles = set([f for f in listdir(dir_path) if isfile(join(dir_path, f))])
     models_to_eval = []
@@ -141,18 +141,9 @@ if __name__ == "__main__":
     # name = 'lunarlander_DQN_256_128_64_relu_0.00025_97500.h5'
 
     # env_name = 'CartPole-v1'
-    # MODEL_NAME = 'cartpole_new'
-    # name = 'cartpole_new_DQN_512_256_64_tanh_0.00025_12500.h5'
-    # model_path = F"../data/{MODEL_NAME}/{name}"
-    # ev = RollOutAgent(env_name, model_path, episodes=500)
-    # print(ev.eval(num_worker=8))
-
-    env_name = 'CartPole-v1'
-    folder_name = 'cartpole_new'
+    # folder_name = 'cartpole_new'
     # env_name = 'LunarLander-v2'
     # folder_name = 'lunarlander'
-    # env_name = 'Acrobot-v1'
-    # folder_name = 'acrobot'
-    # env_name = 'Acrobot-v1'
-    # folder_name = 'pendulum'
+    env_name = 'Acrobot-v1'
+    folder_name = 'acrobot'
     eval_directory(env_name, folder_name, episodes=100)

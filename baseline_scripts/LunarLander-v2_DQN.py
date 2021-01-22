@@ -67,7 +67,7 @@ class DQNAgent:
                  layers=None,
                  activation="relu",
                  lr=0.00025,
-                 total_timesteps=100000,
+                 total_timesteps=200000,
                  max_mem_size=50000,
                  train_freq = 1,
                  rand=0.0):
@@ -157,7 +157,7 @@ class DQNAgent:
 
     def run(self, save_points=None):
         if save_points is None:
-            save_points = set([i * 2500 for i in range(2, 41)])
+            save_points = set([i * 5000 for i in range(2, 41)])
 
         print_every = 1000
         start_time = time.time()
@@ -185,7 +185,7 @@ class DQNAgent:
                 self.target.set_weights(self.model.get_weights())
 
             if t in save_points:
-                save_name = self.name + str(t)
+                save_name = self.name + str(t) + F"_{np.random.randint(100000)}"
                 print(F"Saving trained model as {save_name}.h5")
                 self.save(F"{save_name}.h5")
             if t % print_every == 0:
