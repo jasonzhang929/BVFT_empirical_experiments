@@ -68,7 +68,7 @@ class RollOutAgent():
         works, parent_conns, child_conns = [], [], []
         for idx in range(num_worker):
             parent_conn, child_conn = Pipe()
-            work = Environment(idx, child_conn, self.env_name, self.state_size[0], self.action_size, visualize=True)
+            work = Environment(idx, child_conn, self.env_name, self.state_size[0], self.action_size, visualize=False)
             work.start()
             works.append(work)
             parent_conns.append(parent_conn)
@@ -125,30 +125,12 @@ class RollOutAgent():
         self.model.save(path)
 
 
-# def eval_directory(env_name, folder_name, episodes=100, num_worker=8):
-#     dir_path = F"../data/{folder_name}/"
-#     onlyfiles = set([f for f in listdir(dir_path) if isfile(join(dir_path, f))])
-#     models_to_eval = []
-#     for file in onlyfiles:
-#         if "VALUE" not in file and 'DATA' not in file:
-#             models_to_eval.append(file)
-#     print(F"{len(models_to_eval)} models to be evaluated")
-#     for model_name in models_to_eval:
-#         model_path = F"../data/{folder_name}/{model_name}"
-#         print(model_path)
-#         ev = RollOutAgent(env_name, model_path, episodes=episodes)
-#         value = ev.eval(num_worker=num_worker)
-#         new_name = "{}_VALUE_{:.5}.h5".format(model_name[:-3], value)
-#         new_path = F"../data/{folder_name}/{new_name}"
-#         os.rename(model_path, new_path)
-#         print(F"renamed {model_name} as {new_name}")
-
 def eval_directory(env_name, folder_name, episodes=100, num_worker=4):
     dir_path = F"../data/{folder_name}/"
     onlyfiles = set([f for f in listdir(dir_path) if isfile(join(dir_path, f))])
     models_to_eval = []
     for file in onlyfiles:
-        if 'DATA' not in file:
+        if "VALUE" not in file and 'DATA' not in file:
             models_to_eval.append(file)
     print(F"{len(models_to_eval)} models to be evaluated")
     for model_name in models_to_eval:
@@ -156,14 +138,32 @@ def eval_directory(env_name, folder_name, episodes=100, num_worker=4):
         print(model_path)
         ev = RollOutAgent(env_name, model_path, episodes=episodes)
         value = ev.eval(num_worker=num_worker)
-        if "VALUE" in model_name:
-            model_name = "_".join(model_name.split("_")[:-2])
-        else:
-            model_name = model_name[:-3]
-        new_name = "{}_VALUE_{:.5}.h5".format(model_name, value)
+        new_name = "{}_VALUE_{:.5}.h5".format(model_name[:-3], value)
         new_path = F"../data/{folder_name}/{new_name}"
         os.rename(model_path, new_path)
         print(F"renamed {model_name} as {new_name}")
+
+# def eval_directory(env_name, folder_name, episodes=100, num_worker=4):
+#     dir_path = F"../data/{folder_name}/"
+#     onlyfiles = set([f for f in listdir(dir_path) if isfile(join(dir_path, f))])
+#     models_to_eval = []
+#     for file in onlyfiles:
+#         if 'DATA' not in file:
+#             models_to_eval.append(file)
+#     print(F"{len(models_to_eval)} models to be evaluated")
+#     for model_name in models_to_eval:
+#         model_path = F"../data/{folder_name}/{model_name}"
+#         print(model_path)
+#         ev = RollOutAgent(env_name, model_path, episodes=episodes)
+#         value = ev.eval(num_worker=num_worker)
+#         if "VALUE" in model_name:
+#             model_name = "_".join(model_name.split("_")[:-2])
+#         else:
+#             model_name = model_name[:-3]
+#         new_name = "{}_VALUE_{:.5}.h5".format(model_name, value)
+#         new_path = F"../data/{folder_name}/{new_name}"
+#         os.rename(model_path, new_path)
+#         print(F"renamed {model_name} as {new_name}")
 
 
 if __name__ == "__main__":

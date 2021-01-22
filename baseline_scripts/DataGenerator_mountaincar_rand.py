@@ -122,7 +122,7 @@ if __name__ == "__main__":
     folder_name = F'mountaincar-{rand}'
 
 
-    threshold = -250
+    threshold = -220
     num_data = 10
     data_size = 100000
     epsilons = [0.1, 0.5, 1.0]

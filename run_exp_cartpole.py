@@ -6,7 +6,19 @@ from os.path import isfile, join
 import matplotlib.pyplot as plt
 from BvftUtil import *
 from keras.models import Model, load_model
+import tensorflow as tf
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
 
 def get_file_names(keywords, path=None):
     # get baselines and dataset
@@ -37,26 +49,41 @@ def get_records(files, folder=""):
     return records
 
 
-def get_models(files, n=0, must_include=""):
-    if n > 0:
-        random.shuffle(files)
-    models = []
-    values = []
-    names = []
-    for i, f in enumerate(files):
-        v = float(f.split("_")[-1][:-3])
-        if model_low < v < model_up:
-            q = load_model(PATH + f)
-            models.append(q)
-            values.append(v)
-            names.append(f)
-        if 0 < n == len(models):
-            break
-    if must_include != "":
-        models[-1] = np.load(PATH + must_include)
-        values[-1] = float(must_include.split("_")[-1][:-4])
-        names[-1] = must_include
-    return models, np.array(values), names
+def get_all_model_values(files):
+    return [float(f.split("_")[-1][:-3]) for f in files]
+
+
+def get_models(files, n=10, top_q_count=2, model_gap=20.0):
+    random.shuffle(files)
+    model_values = [float(f.split("_")[-1][:-3]) for f in files]
+    selected_model_names = []
+    selected_model_values = []
+    selected_model_functions = []
+
+    for i, v in enumerate(model_values):
+        if v >= TOP_Q_FLOOR:
+            selected_model_names.append(files[i])
+            selected_model_values.append(v)
+            selected_model_functions.append(load_model(PATH + files[i]))
+            if len(selected_model_names) == top_q_count:
+                break
+    for i, v in enumerate(model_values):
+        if NORMAL_Q_FLOOR < v <= NORMAL_Q_CEILING:
+            skip = False
+            for v1 in selected_model_values:
+                if abs(v1-v) < model_gap:
+                    skip = True
+                    break
+            if skip:
+                continue
+            selected_model_names.append(files[i])
+            selected_model_values.append(v)
+            selected_model_functions.append(load_model(PATH + files[i]))
+            if len(selected_model_names) == n:
+                break
+    if len(selected_model_names) < n:
+        print("NOT ENOUGH MODEL!")
+    return selected_model_functions, selected_model_values, selected_model_names
 
 
 def get_T_R():
@@ -151,12 +178,8 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
     k = np.random.randint(1e6)
     t = time.time()
     for run in range(num_runs):
-        q_functions, values, q_names = get_models(model_names, n=num_model, must_include=optimal_q_name)
-        # optimal_q = q_functions[-1]
-        # q_star_diff = np.array([np.linalg.norm(optimal_q - q, 2) for q in q_functions])
-        data_keywords = ["DATA", str(data_explore_rate)]
-        data_keywords = ["DATA"]
-        data_names = get_file_names(data_keywords)
+        q_functions, values, q_names = get_models(model_names, n=num_model)
+        data_names = get_file_names(["DATA", str(data_explore_rate)])
         dataset = get_data(data_names, size=max(data_sizes))
         data_start = np.random.randint(len(dataset) - data_size)
         data = dataset[data_start:data_start + data_size]
@@ -183,10 +206,10 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
 
 def run_experiment_2(num_runs):
-    num_models = [10, 15]
+    num_models = [10]
     data_sizes = [500, 5000, 50000]
 
-    data_explore_rates = [0.2]
+    data_explore_rates = [0.1, 0.5, 1.0]
     resolutions = {5000: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0],
                    500: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0],
                    50000: [0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0]}
@@ -202,7 +225,7 @@ def experiment3(model_count, folder="", auto_res=False, c=0.1):
     record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
     data_sizes = [500, 5000, 50000]
-    data_explore_rates = [0.2]
+    data_explore_rates = [0.1, 0.5, 1.0]
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
@@ -333,6 +356,15 @@ def experiment4(num_model):
     # fig_per.show()
     fig_res.show()
 
+def show_model_distribution():
+    model_names = get_file_names(model_keywords)
+    values = get_all_model_values(model_names)
+    plt.hist(values, 50, density=False, facecolor='g', alpha=0.75)
+    plt.xlabel('Roll out values')
+    plt.ylabel('Model count')
+    plt.title(F'Histogram of {ENV_NAME} model values ({len(values)} total)')
+    plt.grid(True)
+    plt.show()
 
 if __name__ == '__main__':
     # ENV_NAME = 'taxi-random-0.5'
@@ -357,9 +389,10 @@ if __name__ == '__main__':
 
     resolutions = np.array([0.1, 0.2, 0.5, 0.7, 1.0, 3.0, 10.0])
 
-    model_counts = [10, 15]
-    model_up = 500
-    model_low = 200
+    model_counts = [10]*3
+    TOP_Q_FLOOR = 430
+    NORMAL_Q_CEILING = 400
+    NORMAL_Q_FLOOR = 100
 
     # data_names = get_file_names(data_keywords)
     # dataset = get_data(data_names, size=100000)
@@ -374,13 +407,13 @@ if __name__ == '__main__':
 
     # for num_models in model_counts:
     #     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)
-    # tm = time.time()
-    # for i in range(10):
-    #     print(F"I {i} {(time.time() - tm)/3600}")
-    #     run_experiment_2(30)
+    tm = time.time()
+    for i in range(10):
+        print(F"I {i} {(time.time() - tm)/3600}")
+        # run_experiment_2(30)
 
-    # fill_bellman_error()
-    experiment3(15, auto_res=True, folder="")
+    # show_model_distribution()
+    experiment3(10, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

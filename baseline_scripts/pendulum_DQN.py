@@ -188,7 +188,7 @@ class DQNAgent:
 
     def run(self, save_points=None):
         if save_points is None:
-            save_points = set([i * 2500 for i in range(4, 21)])
+            save_points = set([i * 2500 for i in range(2, 15)])
 
         print_every = 1000
         start_time = time.time()
@@ -216,7 +216,7 @@ class DQNAgent:
                 self.target.set_weights(self.model.get_weights())
 
             if t in save_points:
-                save_name = self.name + str(t)
+                save_name = self.name + str(t) + F"_{np.random.randint(100000)}"
                 print(F"Saving trained model as {save_name}.h5")
                 self.save(F"{save_name}.h5")
             if t % print_every == 0:
@@ -241,8 +241,8 @@ def generate_models():
                  layers=layer,
                  activation=activation,
                  batch_size=64,
-                                 total_timesteps=50000,
-                                 epsilon_decay_steps=20000,
+                                 total_timesteps=35000,
+                                 epsilon_decay_steps=30000,
                  lr=lr)
                 agent.run()
 
