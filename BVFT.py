@@ -148,6 +148,18 @@ class BVFT(object):
         loss = [self.compute_loss(q, groups) for q in range(self.q_size)]
         self.record.optimal_grouping_skyline.append(np.array(loss))
 
+    def compute_e_q_star_diff(self):
+        q_star = self.q_sa[-1]
+        e_q_star_diff = [np.sqrt(np.mean((q - q_star) ** 2)) for q in self.q_sa[:-1]] + [0.0]
+        self.record.e_q_star_diff = np.array(e_q_star_diff)
+
+    def compute_expected_bellman_loss(self, T, R):
+
+        expected_R = np.sum(T * R, axis=2)
+        # max_v = np.max(Q, axis=1)
+        # TQ = expected_R + gamma * np.sum(T * max_v, axis=2)
+        # return np.linalg.norm(Q - TQ, 2)
+
 
     def get_br_ranking(self):
         br = [np.sqrt(np.sum((self.q_sa[q] - self.r_plus_vfsp[q]) ** 2)) for q in range(self.q_size)]

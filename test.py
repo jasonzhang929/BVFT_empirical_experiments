@@ -7,9 +7,10 @@ env = gym.make('minigrid-fourrooms-v0')
 print(env.observation_space.shape)
 print(env.action_space.n)
 
+
 # d4rl abides by the OpenAI gym interface
 env.reset()
-print(env.step(env.action_space.sample()))
+env.step(env.action_space.sample())
 
 # # Each task is associated with a dataset
 # # dataset contains observations, actions, rewards, terminals, and infos
@@ -30,3 +31,4 @@ for i in range(10):
         if i != 0.0:
             print("FK")
     print(dataset.keys())
+

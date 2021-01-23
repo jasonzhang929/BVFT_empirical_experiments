@@ -27,6 +27,7 @@ class BvftRecord(object):
         self.bellman_error = None
         self.q_names = None
         self.q_star_diff = None
+        self.e_q_star_diff = None
         self.avg_q = None
         self.optimal_grouping_skyline = []
         self.hyper_parameters = [self.data_size,
