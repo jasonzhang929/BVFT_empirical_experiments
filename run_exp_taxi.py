@@ -168,6 +168,7 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
         for i, res in enumerate(resolutions):
             bvft.run(resolution=res)
             bvft.compute_optimal_group_skyline()
+        bvft.compute_e_q_star_diff()
         bvft.get_br_ranking()
         records.append(record)
         if run > 0 and run % 10 == 0:
