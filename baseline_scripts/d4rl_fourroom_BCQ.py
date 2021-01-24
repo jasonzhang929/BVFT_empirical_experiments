@@ -6,9 +6,11 @@ import os
 
 import numpy as np
 import torch
-
+import gym
+import d4rl
 import discrete_BCQ
 import utils
+import BCQ_utils
 
 
 def train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters):
@@ -73,6 +75,11 @@ def eval_policy(policy, env_name, seed, eval_episodes=10):
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
     print("---------------------------------------")
     return avg_reward
+
+def generate_replay_buffer(env_name, buffer_size, replay_buffer):
+    env = gym.make('minigrid-fourrooms-v0')
+    length = 0
+
 
 
 if __name__ == "__main__":
