@@ -37,7 +37,7 @@ def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_d
         parameters["eval_eps"],
     )
 
-    if args.generate_buffer: policy.load(f"./models/behavioral_{setting}")
+    if args.generate_buffer: policy.load(f"./../models/behavioral_{setting}")
 
     evaluations = []
 
@@ -117,8 +117,8 @@ def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_d
     # Save final buffer and performance
     else:
         evaluations.append(eval_policy(policy, args.env, args.seed))
-        np.save(f"./results/buffer_performance_{setting}", evaluations)
-        replay_buffer.save(f"./buffers/{buffer_name}")
+        # np.save(f"./results/buffer_performance_{setting}", evaluations)
+        replay_buffer.save(f"./../buffers/{buffer_name}")
 
 
 def train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters):
