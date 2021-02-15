@@ -168,6 +168,7 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
         for i, res in enumerate(resolutions):
             bvft.run(resolution=res)
             bvft.compute_optimal_group_skyline()
+        bvft.compute_e_q_star_diff()
         bvft.get_br_ranking()
         records.append(record)
         if run > 0 and run % 10 == 0:
@@ -208,8 +209,8 @@ def experiment3(model_count, folder="", auto_res=False):
         text = "Q* included" if include_q_star else "Q* excluded"
         fig, axs = get_subplots(len(data_sizes), 4 if auto_res else 2,
                                 F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
-        fig_res, axs_res = get_subplots(k, len(data_sizes),
-                                        F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
+        # fig_res, axs_res = get_subplots(k, len(data_sizes),
+        #                                 F"{ENV_NAME}, {model_count} models, data exploration rate {data_explore_rate}, {text}")
         for i, data_size in enumerate(data_sizes):
             record_matcher = BvftRecord(data_size=data_size, data_explore_rate=data_explore_rate, gamma=GAMMA,
                                         model_count=model_count)
@@ -222,16 +223,16 @@ def experiment3(model_count, folder="", auto_res=False):
             top, bot, left, right = i == 0, i == len(data_sizes) - 1, False, False
             plot_loc = (top, bot, left, right)
             plot_top_k_metrics(axs[i][:2], matched_records, exclude_q_star=not include_q_star, plot_loc=plot_loc,
-                               auto_res=False, include_avgqsa=False, include_random=False)
+                               auto_res=False, include_avgqsa=True, include_random=True)
             if auto_res:
                 plot_top_k_metrics(axs[i][2:], matched_records, exclude_q_star=not include_q_star, plot_loc=plot_loc,
-                                   auto_res=auto_res, include_avgqsa=False, include_random=False)
+                                   auto_res=auto_res, include_avgqsa=True, include_random=True)
             axs[i, 0].set_ylabel(F"|D| = {data_size}")
             for j, record in enumerate(random.sample(matched_records, k)):
                 top, bot, left, right = j == 0, j == k - 1, i == 0, i == len(data_sizes) - 1
                 plot_loc = (top, bot, left, right)
-                plot_bvft_loss_vs_resolution_plot(axs_res[j, i], record, plot_loc=plot_loc,
-                                                  exclude_q_star=not include_q_star, model_count=8)
+                # plot_bvft_loss_vs_resolution_plot(axs_res[j, i], record, plot_loc=plot_loc,
+                #                                   exclude_q_star=not include_q_star, model_count=8)
         plt.show()
     model_values = list(model_stats.values())
     plt.hist(model_values, 50, density=True, facecolor='g', alpha=0.75)

@@ -264,7 +264,7 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
         for record in records:
             resolution_set.update(record.resolutions)
         resolutions = sorted(list(resolution_set))
-    ranker_list = ["Random", "1 sample BR", "|Q-Q*|", "|Q-TQ|", "Avg(Q(s,a))"]
+    ranker_list = ["Random", "1 sample BR", "E[Q-Q*]", "|Q-Q*|", "|Q-TQ|", "Avg(Q(s,a))"]
     if auto_res:
         ranker_list.append("BVFT auto")
         ranker_list.append("BVFT Skyline")
@@ -287,6 +287,8 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
             ranker_loss_list.append(("|Q-Q*|", record.q_star_diff[:-1] if exclude_q_star else record.q_star_diff))
         if record.bellman_error is not None:
             ranker_loss_list.append(("|Q-TQ|", record.bellman_error[:-1] if exclude_q_star else record.bellman_error))
+        if hasattr(record, 'e_q_star_diff') and record.e_q_star_diff is not None:
+            ranker_loss_list.append(("E[Q-Q*]", record.e_q_star_diff[:-1] if exclude_q_star else record.e_q_star_diff))
 
         ranker_loss_list.append(("Avg(Q(s,a))", -np.array(record.avg_q[:-1]) if exclude_q_star else -np.array(record.avg_q)))
         if auto_res:
@@ -299,7 +301,8 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
                 auto_loss.append(loss + c * res)
             ranker_loss_list.append((F"BVFT auto", np.min(auto_loss, axis=0)))
 
-            if record.optimal_grouping_skyline is not None and len(record.optimal_grouping_skyline) > 0:
+            if hasattr(record, 'optimal_grouping_skyline') and record.optimal_grouping_skyline is not None \
+                    and len(record.optimal_grouping_skyline) > 0:
                 auto_loss_skyline = []
                 for i, res in enumerate(record.resolutions):
                     loss = record.optimal_grouping_skyline[i]
