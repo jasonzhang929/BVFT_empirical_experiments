@@ -17,7 +17,7 @@ import DQN
 def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters, eval_episodes=50):
     # For saving files
     setting = f"{args.env}_{args.seed}"
-    buffer_name = f"{args.buffer_name}_{setting}"
+    buffer_name = f"{args.env}_{args.buffer_name}_{args.low_noise_p}"
 
     # Initialize and load policy
     policy = DQN.DQN(
@@ -37,7 +37,9 @@ def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_d
         parameters["eval_eps"],
     )
 
-    if args.generate_buffer: policy.load(f"./../models/behavioral_{setting}")
+    if args.generate_buffer: policy.load(f"./../models/{args.policy_name}")
+    if hasattr(args, 'resume') and args.resume: policy.load(f"./../models/{args.policy_name}")
+
 
     evaluations = []
 

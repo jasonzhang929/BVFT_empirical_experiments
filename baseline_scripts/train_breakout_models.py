@@ -27,16 +27,16 @@ if __name__ == "__main__":
     atari_parameters = {
         # Exploration
         "start_timesteps": 2e4,
-        "initial_eps": 1,
+        "initial_eps": 0.5,
         "end_eps": 1e-2,
-        "eps_decay_period": 25e4,
+        "eps_decay_period": 50e4,
         # Evaluation
         "eval_freq": 5e4,
         "eval_eps": 1e-3,
         # Learning
         "discount": 0.99,
-        "buffer_size": 1e6,
-        "batch_size": 32,
+        "buffer_size": 5e5,
+        "batch_size": 64,
         "optimizer": "Adam",
         "optimizer_parameters": {
             "lr": 0.0000625,
@@ -63,7 +63,14 @@ if __name__ == "__main__":
     parser.add_argument("--generate_buffer", action="store_true")  # If true, generate buffer
     args = parser.parse_args()
 
-    args.train_behavioral = True
+    # args.train_behavioral = True
+    args.generate_buffer = True
+    args.resume = True
+    args.policy_name = 'DQN_BreakoutNoFrameskip-v0_0_2800000_74.2'
+    if args.generate_buffer:
+        args.max_timesteps = 3e5
+        args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
+
 
     print("---------------------------------------")
     if args.train_behavioral:

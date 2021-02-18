@@ -27,16 +27,16 @@ if __name__ == "__main__":
     atari_parameters = {
         # Exploration
         "start_timesteps": 2e4,
-        "initial_eps": 1,
+        "initial_eps": 0.5,
         "end_eps": 1e-2,
-        "eps_decay_period": 25e4,
+        "eps_decay_period": 50e4,
         # Evaluation
         "eval_freq": 5e4,
         "eval_eps": 1e-3,
         # Learning
         "discount": 0.99,
-        "buffer_size": 1e6,
-        "batch_size": 32,
+        "buffer_size": 4e5,
+        "batch_size": 64,
         "optimizer": "Adam",
         "optimizer_parameters": {
             "lr": 0.0000625,
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="PongNoFrameskip-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=1, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Default")  # Prepends name to filename
-    parser.add_argument("--max_timesteps", default=3e6, type=int)  # Max time steps to run environment or train for
+    parser.add_argument("--max_timesteps", default=5e6, type=int)  # Max time steps to run environment or train for
     parser.add_argument("--BCQ_threshold", default=0.3, type=float)  # Threshold hyper-parameter for BCQ
     parser.add_argument("--low_noise_p", default=0.2,
                         type=float)  # Probability of a low noise episode when generating buffer
@@ -63,7 +63,15 @@ if __name__ == "__main__":
     parser.add_argument("--generate_buffer", action="store_true")  # If true, generate buffer
     args = parser.parse_args()
 
-    args.train_behavioral = True
+    # args.train_behavioral = True
+    args.generate_buffer = True
+
+    if args.train_behavioral:
+        args.resume = True
+    if args.generate_buffer:
+        args.max_timesteps = 4e5
+        args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
+    args.policy_name = 'DQN_PongNoFrameskip-v0_1_1950000_7.5'
 
     print("---------------------------------------")
     if args.train_behavioral:

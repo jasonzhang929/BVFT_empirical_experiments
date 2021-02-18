@@ -3,15 +3,10 @@ from BvftUtil import BvftRecord
 
 
 class BVFT(object):
-    def __init__(self, q_functions, data, gamma, rmax, rmin, record: BvftRecord = BvftRecord(), tabular=False,
-                 verbose=False, bins=None,
-                 profiling=False):
+    def __init__(self, q_functions, data, gamma, rmax, rmin, record: BvftRecord = BvftRecord(), q_type='tabular',
+                 verbose=False, bins=None, data_size=500):
         self.data = data
-        self.n = len(data)
-        self.rmax = rmax
         self.gamma = gamma
-        self.vmax = rmax / (1.0 - gamma)
-        self.vmin = rmin / (1.0 - gamma)
         self.res = 0
         self.q_sa_discrete = []
         self.q_to_data_map = []
@@ -25,28 +20,55 @@ class BVFT(object):
         self.q_functions = q_functions
         self.record = record
 
-        if self.verbose:
-            print(F"Data size = {self.n}")
-        rewards = np.array([t[2] for t in self.data])
-
-        actions = [int(t[1]) for t in self.data]
-
-        if tabular:
+        if q_type == 'tabular':
+            self.n = len(data)
+            rewards = np.array([t[2] for t in self.data])
+            actions = [int(t[1]) for t in self.data]
             states = np.array([t[0] for t in self.data])
             for Q in q_functions:
                 self.q_sa.append(np.array([Q[states[i], actions[i]] for i in range(self.n)]))
                 vfsp = np.array([0.0 if t[3] is None else np.max(Q[t[3]]) for t in self.data])
                 self.r_plus_vfsp.append(rewards + self.gamma * vfsp)
-        else:
+
+        elif q_type == 'keras_standard':
+            self.n = len(data)
+            rewards = np.array([t[2] for t in self.data])
+            actions = [int(t[1]) for t in self.data]
             next_states = np.array([t[3][0] for t in self.data])
             states = np.array([t[0][0] for t in self.data])
             for Q in q_functions:
                 qs = Q.predict(states)
-                # print(qs)
                 self.q_sa.append(np.array([qs[i][actions[i]] for i in range(self.n)]))
                 vfsp = np.max(Q.predict(next_states), axis=1)
                 self.r_plus_vfsp.append(rewards + self.gamma * vfsp)
+
+        elif q_type == 'torch_atari':
+            batch_size = min(1024, self.data.crt_size, data_size)
+            self.data.batch_size = batch_size
+            self.q_sa = [np.zeros(data_size) for _ in q_functions]
+            self.r_plus_vfsp = [np.zeros(data_size) for _ in q_functions]
+            ptr = 0
+            while ptr < data_size:
+                state, action, next_state, reward, done = self.data.sample()
+                # print(self.q_sa)
+                for i, Q in enumerate(q_functions):
+                    length = min(batch_size, data_size - ptr)
+                    self.q_sa[i][ptr:ptr + length] = Q(state).gather(1, action).cpu().detach().numpy().flatten()[:length]
+                    # self.q_sa[i].append(Q(state).gather(1, action).cpu().detach().numpy().flatten())
+                    vfsp = (reward + Q(next_state) * done * self.gamma).max(dim=1)[0]
+                    self.r_plus_vfsp[i][ptr:ptr + length] = vfsp.cpu().detach().numpy().flatten()[:length]
+                    # self.r_plus_vfsp.append((reward + self.gamma * vfsp * done).cpu().detach().numpy().flatten())
+                ptr += batch_size
+            # self.q_sa = np.array(self.q_sa)[:, :data_size]
+            # self.r_plus_vfsp = np.array(self.r_plus_vfsp)[:, :data_size]
+            self.n = data_size
+
+        if self.verbose:
+            print(F"Data size = {self.n}")
         self.record.avg_q = [np.sum(qsa) for qsa in self.q_sa]
+        self.vmax = np.max(self.q_sa)
+        self.vmin = np.min(self.q_sa)
+
 
     def discretize(self):
         self.q_sa_discrete = []

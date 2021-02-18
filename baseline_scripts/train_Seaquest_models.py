@@ -27,9 +27,9 @@ if __name__ == "__main__":
     atari_parameters = {
         # Exploration
         "start_timesteps": 2e4,
-        "initial_eps": 0.3,
+        "initial_eps": 0.5,
         "end_eps": 1e-2,
-        "eps_decay_period": 50e4,
+        "eps_decay_period": 5e5,
         # Evaluation
         "eval_freq": 5e4,
         "eval_eps": 1e-3,
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     # Load parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", default="SpaceInvadersNoFrameskip-v0")  # OpenAI gym environment name
+    parser.add_argument("--env", default="SeaquestNoFrameskip-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Default")  # Prepends name to filename
     parser.add_argument("--max_timesteps", default=5e6, type=int)  # Max time steps to run environment or train for
@@ -63,15 +63,14 @@ if __name__ == "__main__":
     parser.add_argument("--generate_buffer", action="store_true")  # If true, generate buffer
     args = parser.parse_args()
 
-    # args.train_behavioral = True
-    args.generate_buffer = True
+    args.train_behavioral = True
+    # args.generate_buffer = True
 
+    args.policy_name = 'DQN_SeaquestNoFrameskip-v0_0_1050000_290.4'
     args.resume = True
     if args.generate_buffer:
-        args.max_timesteps = 5e5
+        args.max_timesteps = 2e5
         args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
-
-    args.policy_name = 'DQN_SpaceInvadersNoFrameskip-v0_0_3550000_601.9'
 
     print("---------------------------------------")
     if args.train_behavioral:
