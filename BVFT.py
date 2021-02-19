@@ -71,11 +71,11 @@ class BVFT(object):
                     actor, critic = Q
                     self.q_sa[i][ptr:ptr + length] = critic(state, action).cpu().detach().numpy().flatten()[
                                                      :length]
-                    print(self.q_sa[i][ptr:ptr + length])
+                    # print(self.q_sa[i][ptr:ptr + length])
                     vfsp = (reward + critic(next_state, actor(next_state)) * done * self.gamma)
 
                     self.r_plus_vfsp[i][ptr:ptr + length] = vfsp.cpu().detach().numpy().flatten()[:length]
-                    print(self.r_plus_vfsp[i][ptr:ptr + length])
+                    # print(self.r_plus_vfsp[i][ptr:ptr + length])
                 ptr += batch_size
             self.n = data_size
 

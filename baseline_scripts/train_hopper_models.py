@@ -30,7 +30,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # args.train_behavioral = True
-    # args.generate_buffer = True
+    args.generate_buffer = True
 
     if not (args.train_behavioral or args.generate_buffer):
         args.buffer_name = 'Hopper-v3_16356_500000.0_0.3'
