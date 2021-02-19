@@ -3,21 +3,21 @@ import gym
 import numpy as np
 import os
 import torch
-
+import time
 import BCQ
 import DDPG
 import utils
 
 
 # Handles interactions with the environment, i.e. train behavioral or generate buffer
-def interact_with_environment(env, state_dim, action_dim, max_action, device, args):
+def interact_with_environment(env, state_dim, action_dim, max_action, device, args, eval_episodes=100):
     # For saving files
     setting = f"{args.env}_{args.seed}"
-    buffer_name = f"{args.buffer_name}_{setting}"
+    buffer_name = f"{args.env}_{args.buffer_name}_{args.rand_action_p}"
 
     # Initialize and load policy
     policy = DDPG.DDPG(state_dim, action_dim, max_action, device)  # , args.discount, args.tau)
-    if args.generate_buffer: policy.load(f"./models/behavioral_{setting}")
+    if args.generate_buffer: policy.load(f"./../models/{args.policy_name}")
 
     # Initialize buffer
     replay_buffer = utils.ReplayBuffer(state_dim, action_dim, device)
@@ -28,7 +28,7 @@ def interact_with_environment(env, state_dim, action_dim, max_action, device, ar
     episode_reward = 0
     episode_timesteps = 0
     episode_num = 0
-
+    start_time = time.time()
     # Interact with the environment for max_timesteps
     for t in range(int(args.max_timesteps)):
 
@@ -72,33 +72,37 @@ def interact_with_environment(env, state_dim, action_dim, max_action, device, ar
 
         # Evaluate episode
         if args.train_behavioral and (t + 1) % args.eval_freq == 0:
-            evaluations.append(eval_policy(policy, args.env, args.seed))
-            np.save(f"./results/behavioral_{setting}", evaluations)
-            policy.save(f"./models/behavioral_{setting}")
+            temp = time.time()
+            evaluations.append(eval_policy(policy, args.env, args.seed, eval_episodes=eval_episodes))
+            print(
+                'Total time {:.5} mins, eval took {} secs'.format((time.time() - start_time) / 60, time.time() - temp))
+            # np.save(f"./results/behavioral_{setting}", evaluations)
+            stats = F"{t + 1}_{evaluations[-1]}"
+            policy.save(f"./../models/DDPG_{setting}_{stats}")
 
     # Save final policy
     if args.train_behavioral:
-        policy.save(f"./models/behavioral_{setting}")
+        policy.save(f"./../models/DDPG_{setting}")
 
     # Save final buffer and performance
     else:
         evaluations.append(eval_policy(policy, args.env, args.seed))
-        np.save(f"./results/buffer_performance_{setting}", evaluations)
-        replay_buffer.save(f"./buffers/{buffer_name}")
+        # np.save(f"./results/buffer_performance_{setting}", evaluations)
+        replay_buffer.save(f"./../buffers/{buffer_name}")
 
 
 # Trains BCQ offline
 def train_BCQ(state_dim, action_dim, max_action, device, args):
     # For saving files
     setting = f"{args.env}_{args.seed}"
-    buffer_name = f"{args.buffer_name}_{setting}"
+    buffer_name = f"{args.buffer_name}"
 
     # Initialize policy
     policy = BCQ.BCQ(state_dim, action_dim, max_action, device, args.discount, args.tau, args.lmbda, args.phi)
 
     # Load buffer
     replay_buffer = utils.ReplayBuffer(state_dim, action_dim, device)
-    replay_buffer.load(f"./buffers/{buffer_name}")
+    replay_buffer.load(f"./../buffers/{buffer_name}")
 
     evaluations = []
     episode_num = 0
@@ -109,9 +113,11 @@ def train_BCQ(state_dim, action_dim, max_action, device, args):
         pol_vals = policy.train(replay_buffer, iterations=int(args.eval_freq), batch_size=args.batch_size)
 
         evaluations.append(eval_policy(policy, args.env, args.seed))
-        np.save(f"./results/BCQ_{setting}", evaluations)
-
+        # np.save(f"./results/BCQ_{setting}", evaluations)
         training_iters += args.eval_freq
+        stats = F"{training_iters}_{evaluations[-1]}"
+        policy.save(f"./../models/BCQ_{setting}_{stats}")
+
         print(f"Training iterations: {training_iters}")
 
 

@@ -50,17 +50,33 @@ class BVFT(object):
             ptr = 0
             while ptr < data_size:
                 state, action, next_state, reward, done = self.data.sample()
-                # print(self.q_sa)
                 for i, Q in enumerate(q_functions):
                     length = min(batch_size, data_size - ptr)
                     self.q_sa[i][ptr:ptr + length] = Q(state).gather(1, action).cpu().detach().numpy().flatten()[:length]
-                    # self.q_sa[i].append(Q(state).gather(1, action).cpu().detach().numpy().flatten())
                     vfsp = (reward + Q(next_state) * done * self.gamma).max(dim=1)[0]
                     self.r_plus_vfsp[i][ptr:ptr + length] = vfsp.cpu().detach().numpy().flatten()[:length]
-                    # self.r_plus_vfsp.append((reward + self.gamma * vfsp * done).cpu().detach().numpy().flatten())
                 ptr += batch_size
-            # self.q_sa = np.array(self.q_sa)[:, :data_size]
-            # self.r_plus_vfsp = np.array(self.r_plus_vfsp)[:, :data_size]
+            self.n = data_size
+
+        elif q_type == 'torch_actor_critic_cont':
+            batch_size = min(1024, self.data.size, data_size)
+            self.data.batch_size = batch_size
+            self.q_sa = [np.zeros(data_size) for _ in q_functions]
+            self.r_plus_vfsp = [np.zeros(data_size) for _ in q_functions]
+            ptr = 0
+            while ptr < data_size:
+                length = min(batch_size, data_size - ptr)
+                state, action, next_state, reward, done = self.data.sample(length)
+                for i, Q in enumerate(q_functions):
+                    actor, critic = Q
+                    self.q_sa[i][ptr:ptr + length] = critic(state, action).cpu().detach().numpy().flatten()[
+                                                     :length]
+                    print(self.q_sa[i][ptr:ptr + length])
+                    vfsp = (reward + critic(next_state, actor(next_state)) * done * self.gamma)
+
+                    self.r_plus_vfsp[i][ptr:ptr + length] = vfsp.cpu().detach().numpy().flatten()[:length]
+                    print(self.r_plus_vfsp[i][ptr:ptr + length])
+                ptr += batch_size
             self.n = data_size
 
         if self.verbose:
