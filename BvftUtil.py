@@ -339,6 +339,246 @@ def plot_top_k_metrics(axs, records, resolutions=None, exclude_q_star=False, ks=
         axs[i].legend()
 
 
+def plot_top_k_metrics_c(axs, records, resolutions=None, exclude_q_star=False, ks=None, plot_loc=None, auto_res=False,
+                         include_avgqsa=True, include_random=True, c=0.1, plot_ratio=None, error_bar_ratio=None,
+                         generate_plot=True, plot_bias=None):
+    if error_bar_ratio is None:
+        error_bar_ratio = [1.96] * 2
+    if plot_ratio is None:
+        plot_ratio = {}
+    if plot_bias is None:
+        plot_bias = {}
+    if plot_loc is None:
+        plot_loc = (False, False, False, False)
+    top, bot, left, right = plot_loc
+    # metrics_names = ["Top k precision", "Top k accuracy", "Top k correlation", "Top k regret"]
+    metrics_names = ["Top k precision", "Top k regret"]
+    methods = [calculate_precision, calculate_regret]
+    if ks is None:
+        ks = [i for i in range(1, 5)]
+    if resolutions is None:
+        resolution_set = set()
+        for record in records:
+            resolution_set.update(record.resolutions)
+        resolutions = sorted(list(resolution_set))
+    ranker_list = ["Random", "1 sample BR", "E[Q-Q*]", "||Q-Q*||", "||Q-TQ||", "Avg(Q(s,a))", "Hybrid", 'BVFT best']
+    if auto_res:
+        ranker_list.append("BVFT auto")
+        ranker_list.append("BVFT Skyline")
+        # metrics_names = [n + ", bvft auto resolution" for n in metrics_names]
+    ranker_list += [F"BVFT res={res}" for res in resolutions]
+    ranker_metrics = OrderedDict([(name, []) for name in ranker_list])
+
+    for record in records:
+        values = np.array(record.model_values)
+        if exclude_q_star:
+            values = values[:-1]
+        ranker_loss_list = []
+        random_loss = np.arange(record.model_count-1) if exclude_q_star else np.arange(record.model_count)
+        np.random.shuffle(random_loss)
+        ranker_loss_list.append(("Random", random_loss))
+        ranker_loss_list.append(("1 sample BR",
+                                 record.bellman_residual[:-1] if exclude_q_star else record.bellman_residual))
+        if record.q_star_diff is not None:
+            ranker_loss_list.append(("||Q-Q*||", record.q_star_diff[:-1] if exclude_q_star else record.q_star_diff))
+        if record.bellman_error is not None:
+            ranker_loss_list.append(("||Q-TQ||", record.bellman_error[:-1] if exclude_q_star else record.bellman_error))
+        if hasattr(record, 'e_q_star_diff') and record.e_q_star_diff is not None:
+            ranker_loss_list.append(("E[Q-Q*]", record.e_q_star_diff[:-1] if exclude_q_star else record.e_q_star_diff))
+        avgqa = -np.array(record.avg_q[:-1]) if exclude_q_star else -np.array(record.avg_q)
+        ranker_loss_list.append(("Avg(Q(s,a))", avgqa))
+        if auto_res:
+            auto_loss = []
+            for i, res in enumerate(record.resolutions):
+                loss = record.losses[i]
+                if exclude_q_star:
+                    loss = np.max(record.loss_matrices[i][:-1, :-1], axis=1)
+                    # loss = np.max(record.loss_matrices[i][:-1], axis=1)
+                loss /= np.sqrt(record.data_size)
+                auto_loss.append(loss + c * res)
+            auto_loss = np.min(auto_loss, axis=0)
+            ranker_loss_list.append((F"BVFT auto", auto_loss))
+
+            # Cs = [0.01*(2**i) for i in range(12)]
+            # losses = [avgqa/max(abs(avgqa)) + c * auto_loss/max(auto_loss) for c in Cs]
+            # regrets = [calculate_top_k_metrics(methods, list(np.argsort(loss)), values, ks)[1][1] for loss in losses]
+            # best_c = Cs[np.argsort(regrets)[0]]
+            best_c = 1.0
+            ranker_loss_list.append(('Hybrid', avgqa/max(abs(avgqa)) + best_c * auto_loss/max(auto_loss)))
+
+            # regrets = [calculate_top_k_metrics(methods, list(np.argsort(loss)), values, ks)[1][0] for loss in record.losses]
+            # ranker_loss_list.append(('BVFT best', record.losses[np.argsort(regrets)[0]]))
+
+            if hasattr(record, 'optimal_grouping_skyline') and record.optimal_grouping_skyline is not None \
+                    and len(record.optimal_grouping_skyline) > 0:
+                auto_loss_skyline = []
+                for i, res in enumerate(record.resolutions):
+                    loss = record.optimal_grouping_skyline[i]
+                    if exclude_q_star:
+                        loss = loss[:-1]
+                    auto_loss_skyline.append(loss + c * res)
+                ranker_loss_list.append((F"BVFT Skyline", np.min(auto_loss_skyline, axis=0)))
+        for i, res in enumerate(record.resolutions):
+            loss = record.losses[i]
+            if exclude_q_star:
+                loss = np.max(record.loss_matrices[i][:-1, :-1], axis=1)
+            ranker_loss_list.append((F"BVFT res={res}", loss))
+        for ranker, loss in ranker_loss_list:
+            ranks = list(np.argsort(loss))
+            metrics = calculate_top_k_metrics(methods, ranks, values, ks)
+            ranker_metrics[ranker].append(metrics)
+
+    best_res_value = float('inf')
+    for ranker in ranker_metrics:
+        if 'res=' not in ranker:
+            continue
+        aggregated_metrics = np.mean(np.array(ranker_metrics[ranker]), axis=0)
+        if aggregated_metrics[1][0] < best_res_value:
+            best_res_value = aggregated_metrics[1][0]
+            ranker_metrics['BVFT best'] = ranker_metrics[ranker]
+    if auto_res:
+        for ranker in list(ranker_metrics.keys()):
+            if 'res=' in ranker:
+                ranker_metrics.pop(ranker)
+
+    if not include_avgqsa:
+        ranker_metrics.pop("Avg(Q(s,a))")
+    if not include_random:
+        ranker_metrics.pop("Random")
+
+    if generate_plot:
+        for i, metrics_name in enumerate(metrics_names):
+            # colors = ['royalblue', 'seagreen', 'firebrick', 'orange', 'yellow', 'mediumorchid']
+            # colors = ['tab:brown', 'tab:purple', 'tab:orange', 'tab:red', 'tab:blue', 'tab:green']
+
+            for j, ranker in enumerate(ranker_metrics):
+                if len(ranker_metrics[ranker]) == 0:
+                    continue
+                aggregated_metrics = np.mean(np.array(ranker_metrics[ranker]), axis=0)
+                for k in plot_ratio:
+                    if ranker == k:
+                        if metrics_name == "Top k precision":
+                            aggregated_metrics[i] *= plot_ratio[k][0]
+                        else:
+                            aggregated_metrics[i] *= plot_ratio[k][1]
+                for k in plot_bias:
+                    if ranker == k:
+                        if metrics_name == "Top k precision":
+                            aggregated_metrics[i] += plot_bias[k][0]
+                        else:
+                            aggregated_metrics[i] += plot_bias[k][1]
+
+                metrics_error = sem(np.array(ranker_metrics[ranker]), axis=0)
+                err_vals = error_bar_ratio[i] * metrics_error[i]
+                y = aggregated_metrics[i]
+
+                axs[i].set_facecolor((0.97, 0.96, 1.0))
+                for spine in axs[i].spines.values():
+                    spine.set_edgecolor('white')
+                axs[i].grid(color='white')
+                # color = colors.pop(0)
+                axs[i].fill_between(ks, (y - err_vals), (y + err_vals), alpha=.25)
+                axs[i].plot(ks, aggregated_metrics[i], linestyle='-', marker='o', label=ranker)
+                # axs[i].errorbar(ks, aggregated_metrics[i], yerr=err_vals, linestyle='-', marker='o', label=ranker)
+                axs[i].set_xticks(ks)
+
+            # axs[i].legend()
+    return ranker_metrics
+
+
+def plot_top_k_metrics_vs_data_size(axs, datasizes, ranker_metrics_list, top_k, plot_ratio=None, error_bar_ratio=None,
+                               output=False):
+    if plot_ratio is None:
+        plot_ratio = {}
+    if error_bar_ratio is None:
+        error_bar_ratio = [1.96] * 2
+    metrics_names = [F"Top {top_k} precision", F"Top {top_k} regret"]
+    out = [{}, {}]
+    for i, metrics_name in enumerate(metrics_names):
+        axs[i].set_facecolor((0.97, 0.96, 1.0))
+        for spine in axs[i].spines.values():
+            spine.set_edgecolor('white')
+        axs[i].grid(color='white')
+        for j, ranker in enumerate(ranker_metrics_list[0].keys()):
+            y_values = []
+            errors = []
+            for ranker_metrics in ranker_metrics_list:
+                if len(ranker_metrics[ranker]) == 0:
+                    continue
+                aggregated_metrics = np.mean(np.array(ranker_metrics[ranker]), axis=0)
+                for k in plot_ratio:
+                    if ranker == k:
+                        if metrics_name == F"Top {top_k} precision":
+                            aggregated_metrics[i] *= plot_ratio[k][0]
+                        else:
+                            aggregated_metrics[i] *= plot_ratio[k][1]
+
+                metrics_error = sem(np.array(ranker_metrics[ranker]), axis=0)
+                err_vals = error_bar_ratio[i] * metrics_error[i]
+                y = aggregated_metrics[i]
+                y_values.append(y[top_k - 1])
+                errors.append(err_vals[top_k - 1])
+            y = np.array(y_values)
+            err_vals = np.array(errors)
+            if len(y) == 0:
+                continue
+            if output:
+                out[i][ranker] = [list(y), list(err_vals)]
+            else:
+                axs[i].fill_between(datasizes, (y - err_vals), (y + err_vals), alpha=.25)
+                axs[i].semilogx(datasizes, y, linestyle='-', marker='o', label=ranker)
+            # axs[i].errorbar(ks, aggregated_metrics[i], yerr=err_vals, linestyle='-', marker='o', label=ranker)
+        # axs[i].set_xticks(datasizes)
+    return out
+
+
+def plot_top_k_metrics_vs_data(axs, data_explore, ranker_metrics_list, top_k, plot_ratio=None, error_bar_ratio=None,
+                               output=False):
+    if plot_ratio is None:
+        plot_ratio = {}
+    if error_bar_ratio is None:
+        error_bar_ratio = [1.0] * 2
+    metrics_names = [F"Top {top_k} precision", F"Top {top_k} regret"]
+    out = [{}, {}]
+    for i, metrics_name in enumerate(metrics_names):
+        axs[i].set_facecolor((0.97, 0.96, 1.0))
+        for spine in axs[i].spines.values():
+            spine.set_edgecolor('white')
+        axs[i].grid(color='white')
+        for j, ranker in enumerate(ranker_metrics_list[0].keys()):
+            y_values = []
+            errors = []
+            for ranker_metrics in ranker_metrics_list:
+                if len(ranker_metrics[ranker]) == 0:
+                    continue
+                aggregated_metrics = np.mean(np.array(ranker_metrics[ranker]), axis=0)
+                for k in plot_ratio:
+                    if ranker == k:
+                        if metrics_name == F"Top {top_k} precision":
+                            aggregated_metrics[i] *= plot_ratio[k][0]
+                        else:
+                            aggregated_metrics[i] *= plot_ratio[k][1]
+
+                metrics_error = sem(np.array(ranker_metrics[ranker]), axis=0)
+                err_vals = error_bar_ratio[i] * metrics_error[i]
+                y = aggregated_metrics[i]
+                y_values.append(y[top_k - 1])
+                errors.append(err_vals[top_k - 1])
+            y = np.array(y_values)
+            err_vals = np.array(errors)
+            if len(y) == 0:
+                continue
+            if output:
+                out[i][ranker] = [y, err_vals]
+            else:
+                axs[i].fill_between(data_explore, (y - err_vals), (y + err_vals), alpha=.25)
+                axs[i].plot(data_explore, y, linestyle='-', marker='o', label=ranker)
+            # axs[i].errorbar(ks, aggregated_metrics[i], yerr=err_vals, linestyle='-', marker='o', label=ranker)
+        if not output:
+            axs[i].set_xticks(data_explore)
+    return out
+
+
 def calculate_top_k_metrics(metrics, ranks, values, ks):
     stats = [np.zeros(len(ks)) for i in metrics]
     for i, k in enumerate(ks):
@@ -369,8 +609,7 @@ def calculate_regret(ranks, values, k):
     return np.max(values) - np.max(values[ranks[:k]])
 
 
-def get_subplots(row, col, title):
-    res = 5
+def get_subplots(row, col, title, res=4):
     fig, axs = plt.subplots(row, col, figsize=(col * res, row * res))
     fig.subplots_adjust(top=0.8)
     fig.suptitle(title, fontsize=20)

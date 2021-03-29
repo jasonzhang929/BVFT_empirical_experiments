@@ -203,6 +203,8 @@ def experiment3(model_count, folder="", auto_res=False):
     records = get_records(record_files, folder=folder)
     data_sizes = [500, 5000, 50000]
     data_explore_rates = [0.1, 0.5, 1.0]
+    data_sizes = [50000]
+    data_explore_rates = [0.5, 1.0]
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
@@ -337,6 +339,7 @@ def experiment4(num_model):
     fig_res.show()
 
 
+
 if __name__ == '__main__':
     ENV_NAME = 'taxi-random-0.5'
     optimal_q_name = "OPTIMAL_Q_GAMMA_0.99_VALUE_-0.43706.npy"
@@ -384,7 +387,9 @@ if __name__ == '__main__':
     #     run_experiment_2(30)
 
     # fill_bellman_error()
-    experiment3(15, auto_res=True, folder="")
+    # experiment3(15, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)
+
+    experiment5(15, auto_res=True, folder="")

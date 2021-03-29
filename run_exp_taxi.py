@@ -377,7 +377,7 @@ if __name__ == '__main__':
     #     run_experiment_2(30)
 
     # fill_bellman_error()
-    experiment3(15, auto_res=True, folder="")
+    experiment5(15, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=5)

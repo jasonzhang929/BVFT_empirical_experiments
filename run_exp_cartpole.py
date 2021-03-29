@@ -366,6 +366,7 @@ def show_model_distribution():
     plt.grid(True)
     plt.show()
 
+
 if __name__ == '__main__':
     # ENV_NAME = 'taxi-random-0.5'
     # optimal_q_name = "OPTIMAL_Q_GAMMA_0.99_VALUE_-0.43706.npy"
@@ -413,7 +414,7 @@ if __name__ == '__main__':
         # run_experiment_2(30)
 
     # show_model_distribution()
-    experiment3(10, auto_res=True, folder="")
+    experiment5(10, auto_res=True, folder="")
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

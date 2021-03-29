@@ -271,6 +271,7 @@ def show_model_distribution():
     plt.show()
 
 
+
 if __name__ == '__main__':
     # ENV_NAME = 'taxi-random-0.5'
     # optimal_q_name = "OPTIMAL_Q_GAMMA_0.99_VALUE_-0.43706.npy"
@@ -307,7 +308,7 @@ if __name__ == '__main__':
 
     # show_model_distribution()
     # fill_bellman_error()
-    experiment3(10, auto_res=True, folder="", c=0.01)
+    experiment5(10, auto_res=True, folder="", c=-1)
     for num_model in model_counts:
         # experiment4(num_model)
         pass
