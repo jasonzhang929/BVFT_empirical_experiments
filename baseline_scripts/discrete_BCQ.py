@@ -159,3 +159,12 @@ class discrete_BCQ(object):
     def copy_target_update(self):
         if self.iterations % self.target_update_frequency == 0:
             self.Q_target.load_state_dict(self.Q.state_dict())
+
+    def save(self, filename):
+        torch.save(self.Q.state_dict(), filename + "_Q")
+        # torch.save(self.Q_optimizer.state_dict(), filename + "_optimizer")
+
+    def load(self, filename):
+        self.Q.load_state_dict(torch.load(filename + "_Q"))
+        self.Q_target = copy.deepcopy(self.  Q)
+        # self.Q_optimizer.load_state_dict(torch.load(filename + "_optimizer"))

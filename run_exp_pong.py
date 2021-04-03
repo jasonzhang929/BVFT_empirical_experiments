@@ -4,7 +4,8 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 from BvftUtil import *
-from baseline_scripts.DQN import Conv_Q
+# from baseline_scripts.DQN import Conv_Q
+from baseline_scripts.discrete_BCQ import Conv_Q
 from baseline_scripts.BCQ_utils import ReplayBuffer
 import torch
 
@@ -35,7 +36,7 @@ def get_records(files, folder=""):
 
 
 def get_all_model_values(files):
-    return [float(f.split("_")[-1][:-3]) for f in files]
+    return [float(f.split("_")[-2]) for f in files]
 
 
 def get_models(files, n=10, top_q_count=2):
@@ -208,8 +209,8 @@ def experiment4(num_model):
             top, bot, left, right = i == 0, i == len(resolutions) - 1, j == 0, j == len(data_sizes) - 1
             plot_loc = (top, bot, left, right)
             plot_metric_vs_bvft_loss_plot(axs_perf_bvft[i, j], record, res, plot_loc=plot_loc)
-            plot_percent_bin_sizes(axs_bin_percent[i, j], record, res, bins, plot_loc=plot_loc)
-            plot_count_bin_sizes(axs_bin_count[i, j], record, res, bins, plot_loc=plot_loc)
+            # plot_percent_bin_sizes(axs_bin_percent[i, j], record, res, bins, plot_loc=plot_loc)
+            # plot_count_bin_sizes(axs_bin_count[i, j], record, res, bins, plot_loc=plot_loc)
         plot_loc = (True, True, j == 0, j == len(data_sizes) - 1)
         mc = num_model if include_q_star else num_model - 1
         plot_bvft_loss_vs_resolution_plot(axs_res[j], record, exclude_q_star=not include_q_star, model_count=mc,
@@ -258,9 +259,9 @@ if __name__ == '__main__':
 
     bins = [2, 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1e5]
     explore_rate = 0.2
-    model_keywords = ["DQN", ENV_NAME, "Q"]
+    model_keywords = ["BCQ", ENV_NAME, "Q"]
     data_keywords = [ENV_NAME, "action", str(explore_rate)]
-    data_sizes = [1000, 10000]
+    data_sizes = [1000, 50000]
     # data_sizes = [20]
 
     resolutions = np.array([0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 1.0])
@@ -269,8 +270,11 @@ if __name__ == '__main__':
     TOP_Q_FLOOR = 7.4
     NORMAL_Q_CEILING = 7.4
     NORMAL_Q_FLOOR = -10.0
-    model_gap = 1.0
+    model_gap = 0.1
 
+    TOP_Q_FLOOR = 3
+    NORMAL_Q_CEILING = 3
+    NORMAL_Q_FLOOR = -10.0
 
     # for num_models in model_counts:
     #     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)
@@ -278,9 +282,9 @@ if __name__ == '__main__':
     for i in range(10):
         print(F"I {i} {(time.time() - tm)/3600}")
         # run_experiment_2(30)
-    # show_model_distribution()
+    show_model_distribution()
     # fill_bellman_error()
-    experiment3(10, auto_res=True, folder="", c=0.001)
+    # experiment3(10, auto_res=True, folder="", c=0.001)
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

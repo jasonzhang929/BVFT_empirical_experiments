@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="Hopper-v3")  # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Robust")  # Prepends name to filename
-    parser.add_argument("--eval_freq", default=5e3, type=float)  # How often (time steps) we evaluate
+    parser.add_argument("--eval_freq", default=10e3, type=float)  # How often (time steps) we evaluate
     parser.add_argument("--max_timesteps", default=1e6,
                         type=int)  # Max time steps to run environment or train for (this defines buffer size)
     parser.add_argument("--start_timesteps", default=25e3,
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     parser.add_argument("--generate_buffer", action="store_true")  # If true, generate buffer
     args = parser.parse_args()
 
-    # args.train_behavioral = True
-    args.generate_buffer = True
+    args.train_behavioral = True
+    # args.generate_buffer = True
 
     if not (args.train_behavioral or args.generate_buffer):
         args.buffer_name = 'Hopper-v3_16356_500000.0_0.3'

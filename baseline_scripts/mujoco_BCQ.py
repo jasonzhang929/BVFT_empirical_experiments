@@ -7,6 +7,7 @@ import time
 import BCQ
 import DDPG
 import utils
+import d4rl_utils
 
 
 # Handles interactions with the environment, i.e. train behavioral or generate buffer
@@ -94,15 +95,16 @@ def interact_with_environment(env, state_dim, action_dim, max_action, device, ar
 # Trains BCQ offline
 def train_BCQ(state_dim, action_dim, max_action, device, args):
     # For saving files
-    setting = f"{args.env}_{args.seed}"
+    setting = f"{args.env}_{args.buffer_name}"
     buffer_name = f"{args.buffer_name}"
 
     # Initialize policy
     policy = BCQ.BCQ(state_dim, action_dim, max_action, device, args.discount, args.tau, args.lmbda, args.phi)
 
     # Load buffer
-    replay_buffer = utils.ReplayBuffer(state_dim, action_dim, device)
-    replay_buffer.load(f"./../buffers/{buffer_name}")
+    # replay_buffer = utils.ReplayBuffer(state_dim, action_dim, device)
+    # replay_buffer.load(f"./../buffers/{buffer_name}")
+    replay_buffer = d4rl_utils.D4rlReplayBuffer(buffer_name, device, int(1e6))
 
     evaluations = []
     episode_num = 0
@@ -112,11 +114,11 @@ def train_BCQ(state_dim, action_dim, max_action, device, args):
     while training_iters < args.max_timesteps:
         pol_vals = policy.train(replay_buffer, iterations=int(args.eval_freq), batch_size=args.batch_size)
 
-        evaluations.append(eval_policy(policy, args.env, args.seed))
+        evaluations.append(eval_policy(policy, args.env, args.seed, eval_episodes=100))
         # np.save(f"./results/BCQ_{setting}", evaluations)
         training_iters += args.eval_freq
         stats = F"{training_iters}_{evaluations[-1]}"
-        policy.save(f"./../models/BCQ_{setting}_{stats}")
+        policy.save(f"./../d4rl_models/BCQ_{setting}_{stats}")
 
         print(f"Training iterations: {training_iters}")
 

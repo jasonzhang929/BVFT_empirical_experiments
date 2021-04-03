@@ -35,7 +35,7 @@ def get_records(files, folder=""):
 
 
 def get_all_model_values(files):
-    return [float(f.split("_")[-1][:-3]) for f in files]
+    return [float(f.split("_")[-2]) for f in files]
 
 
 def get_models(files, n=10, top_q_count=2, model_gap=2.0):
@@ -277,9 +277,9 @@ if __name__ == '__main__':
     for i in range(10):
         print(F"I {i} {(time.time() - tm)/3600}")
         # run_experiment_2(30)
-    # show_model_distribution()
+    show_model_distribution()
     # fill_bellman_error()
-    experiment3(10, auto_res=True, folder="", c=0.001)
+    # experiment3(10, auto_res=True, folder="", c=0.001)
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

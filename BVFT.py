@@ -42,6 +42,22 @@ class BVFT(object):
                 vfsp = np.max(Q.predict(next_states), axis=1)
                 self.r_plus_vfsp.append(rewards + self.gamma * vfsp)
 
+        # elif q_type == 'torch_atari':
+        #     batch_size = min(1024, self.data.crt_size, data_size)
+        #     self.data.batch_size = batch_size
+        #     self.q_sa = [np.zeros(data_size) for _ in q_functions]
+        #     self.r_plus_vfsp = [np.zeros(data_size) for _ in q_functions]
+        #     ptr = 0
+        #     while ptr < data_size:
+        #         state, action, next_state, reward, done = self.data.sample()
+        #         for i, Q in enumerate(q_functions):
+        #             length = min(batch_size, data_size - ptr)
+        #             self.q_sa[i][ptr:ptr + length] = Q(state)[0].gather(1, action).cpu().detach().numpy().flatten()[:length]
+        #             vfsp = (reward + Q(next_state)[0] * done * self.gamma).max(dim=1)[0]
+        #             self.r_plus_vfsp[i][ptr:ptr + length] = vfsp.cpu().detach().numpy().flatten()[:length]
+        #         ptr += batch_size
+        #     self.n = data_size
+
         elif q_type == 'torch_atari':
             batch_size = min(1024, self.data.crt_size, data_size)
             self.data.batch_size = batch_size
@@ -154,9 +170,9 @@ class BVFT(object):
         for q1 in range(self.q_size):
             for q2 in range(q1, self.q_size):
                 groups = self.get_groups(q1, q2)
-                percent_bins, count_bins = self.get_bins(groups)
-                percent_histos.append(percent_bins)
-                count_histos.append(count_bins)
+                # percent_bins, count_bins = self.get_bins(groups)
+                # percent_histos.append(percent_bins)
+                # count_histos.append(count_bins)
                 group_count.append(len(groups))
 
                 loss_matrix[q1, q2] = self.compute_loss(q1, groups)
@@ -168,16 +184,16 @@ class BVFT(object):
                     # if self.verbose:
                     #     print("loss |Q{}; Q{}| = {}".format(q2, q1, loss_matrix[q2, q1]))
 
-        average_percent_bins = np.mean(np.array(percent_histos), axis=0) / self.n
-        average_count_bins = np.mean(np.array(count_histos), axis=0)
+        # average_percent_bins = np.mean(np.array(percent_histos), axis=0) / self.n
+        # average_count_bins = np.mean(np.array(count_histos), axis=0)
         average_group_count = np.mean(group_count)
         if self.verbose:
             print(np.max(loss_matrix, axis=1))
         self.record.resolutions.append(resolution)
         self.record.losses.append(np.max(loss_matrix, axis=1))
         self.record.loss_matrices.append(loss_matrix)
-        self.record.percent_bin_histogram.append(average_percent_bins)
-        self.record.count_bin_histogram.append(average_count_bins)
+        # self.record.percent_bin_histogram.append(average_percent_bins)
+        # self.record.count_bin_histogram.append(average_count_bins)
         self.record.group_counts.append(average_group_count)
 
 

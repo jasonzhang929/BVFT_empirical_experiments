@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="SpaceInvadersNoFrameskip-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Default")  # Prepends name to filename
-    parser.add_argument("--max_timesteps", default=5e6, type=int)  # Max time steps to run environment or train for
+    parser.add_argument("--max_timesteps", default=15e5, type=int)  # Max time steps to run environment or train for
     parser.add_argument("--BCQ_threshold", default=0.3, type=float)  # Threshold hyper-parameter for BCQ
     parser.add_argument("--low_noise_p", default=0.2,
                         type=float)  # Probability of a low noise episode when generating buffer
@@ -72,6 +72,10 @@ if __name__ == "__main__":
         args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
 
     args.policy_name = 'DQN_SpaceInvadersNoFrameskip-v0_0_3550000_601.9'
+
+    # args.train_behavioral = False
+    # args.generate_buffer = False
+    # args.buffer_name = 'SpaceInvadersNoFrameskip-v0_13836_500000.0_0.2'
 
     print("---------------------------------------")
     if args.train_behavioral:
@@ -108,8 +112,10 @@ if __name__ == "__main__":
     # Initialize buffer
     replay_buffer = BCQ_utils.ReplayBuffer(state_dim, is_atari, atari_preprocessing, parameters["batch_size"],
                                        parameters["buffer_size"], device)
-
-    if args.train_behavioral or args.generate_buffer:
-        atari_BCQ.interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
-    else:
-        atari_BCQ.train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
+    for a in [0.5, 0.8, 1.0]:
+        args.low_noise_p = a
+        if args.train_behavioral or args.generate_buffer:
+            atari_BCQ.interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
+        else:
+            for i in range(5):
+                atari_BCQ.train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)

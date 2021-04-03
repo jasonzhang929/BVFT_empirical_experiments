@@ -27,9 +27,9 @@ if __name__ == "__main__":
     atari_parameters = {
         # Exploration
         "start_timesteps": 2e4,
-        "initial_eps": 0.5,
+        "initial_eps": 1.0,
         "end_eps": 1e-2,
-        "eps_decay_period": 25e4,
+        "eps_decay_period": 100e4,
         # Evaluation
         "eval_freq": 5e4,
         "eval_eps": 1e-3,
@@ -64,8 +64,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.train_behavioral = True
-    args.resume = True
-    args.policy_name = 'DQN_EnduroNoFrameskip-v0_0_600000_0.0'
+    # args.resume = True
+    # args.policy_name = 'DQN_EnduroNoFrameskip-v0_0_600000_0.0'
 
     print("---------------------------------------")
     if args.train_behavioral:

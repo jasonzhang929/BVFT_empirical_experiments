@@ -279,7 +279,7 @@ if __name__ == '__main__':
         # run_experiment_2(30)
     # show_model_distribution()
     # fill_bellman_error()
-    experiment3(10, auto_res=True, folder="", c=0.001)
+    experiment3(10, auto_res=True, folder="mujoco/", c=0.001)
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

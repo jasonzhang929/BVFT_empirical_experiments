@@ -14,7 +14,7 @@ import BCQ_utils
 import DQN
 
 
-def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters, eval_episodes=50):
+def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters, eval_episodes=100):
     # For saving files
     setting = f"{args.env}_{args.seed}"
     buffer_name = f"{args.env}_{args.buffer_name}_{args.low_noise_p}"
@@ -123,10 +123,10 @@ def interact_with_environment(env, replay_buffer, is_atari, num_actions, state_d
         replay_buffer.save(f"./../buffers/{buffer_name}")
 
 
-def train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters):
+def train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters, eval_episodes=100):
     # For saving files
     setting = f"{args.env}_{args.seed}"
-    buffer_name = f"{args.buffer_name}_{setting}"
+    buffer_name = f"{args.buffer_name}"
 
     # Initialize and load policy
     policy = discrete_BCQ.discrete_BCQ(
@@ -148,7 +148,7 @@ def train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args
     )
 
     # Load replay buffer
-    replay_buffer.load(f"./buffers/{buffer_name}")
+    replay_buffer.load(f"./../buffers/{buffer_name}")
 
     evaluations = []
     episode_num = 0
@@ -160,8 +160,10 @@ def train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args
         for _ in range(int(parameters["eval_freq"])):
             policy.train(replay_buffer)
 
-        evaluations.append(eval_policy(policy, args.env, args.seed))
-        np.save(f"./results/BCQ_{setting}", evaluations)
+        evaluations.append(eval_policy(policy, args.env, args.seed, eval_episodes=eval_episodes))
+        # np.save(f"./results/BCQ_{setting}", evaluations)
+        stats = F"{training_iters + 1}_{evaluations[-1]}"
+        policy.save(f"./../models/BCQ_{setting}_{stats}")
 
         training_iters += int(parameters["eval_freq"])
         print(f"Training iterations: {training_iters}")

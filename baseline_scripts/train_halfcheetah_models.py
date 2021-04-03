@@ -38,9 +38,10 @@ if __name__ == "__main__":
     if args.generate_buffer:
         args.max_timesteps = 5e5
         args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
+        args.rand_action_p = 0.1
 
     if not (args.train_behavioral or args.generate_buffer):
-        args.buffer_name = 'HalfCheetah-v2_14225_500000.0_0.3'
+        args.buffer_name = 'halfcheetah-expert-v0'
 
     args.policy_name = 'DDPG_HalfCheetah-v2_0_960000_10979.748080465995'
 

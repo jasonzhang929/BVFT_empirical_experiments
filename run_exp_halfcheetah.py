@@ -121,7 +121,7 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
 def run_experiment_2(num_runs):
     num_models = [10]
-    data_sizes = [500, 5000, 50000]
+    data_sizes = [500, 50000]
 
     data_explore_rates = [0.3]
     resolutions = {5000: [0.01, 0.1, 0.2, 0.5, 0.7, 1.0],
@@ -140,7 +140,7 @@ def run_experiment_2(num_runs):
 def experiment3(model_count, folder="", auto_res=False, c=0.1):
     record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
-    data_sizes = [500, 5000, 50000]
+    data_sizes = [500, 50000]
     data_explore_rates = [0.3]
     k = 4
     model_stats = {}
@@ -264,9 +264,9 @@ if __name__ == '__main__':
     resolutions = np.array([0.1, 0.2, 0.5, 0.7, 1.0]) * 30
 
     model_counts = [10]*2
-    TOP_Q_FLOOR = 11000
-    NORMAL_Q_CEILING = 9000
-    NORMAL_Q_FLOOR = 5000
+    TOP_Q_FLOOR = 10000
+    NORMAL_Q_CEILING = 10000
+    NORMAL_Q_FLOOR = 6000
     model_gap = 100.0
 
 
@@ -276,10 +276,10 @@ if __name__ == '__main__':
     tm = time.time()
     for i in range(10):
         print(F"I {i} {(time.time() - tm)/3600}")
-        # run_experiment_2(30)
+        # run_experiment_2(10)
     # show_model_distribution()
     # fill_bellman_error()
-    experiment3(10, auto_res=True, folder="", c=0.001)
+    experiment3(10, auto_res=True, folder="", c=0.000)
     # for num_model in model_counts:
         # experiment4(num_model)
     # generate_more_q(count=1)

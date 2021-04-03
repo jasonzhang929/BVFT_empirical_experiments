@@ -4,6 +4,7 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 from BvftUtil import *
+# from baseline_scripts.discrete_BCQ import Conv_Q
 from baseline_scripts.DQN import Conv_Q
 from baseline_scripts.BCQ_utils import ReplayBuffer
 import torch
@@ -90,10 +91,10 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
     records = []
     k = np.random.randint(1e6)
     t = time.time()
+    data_names = get_file_names([ENV_NAME, '500000', 'action', str(data_explore_rate)], data_path)
+    dataset = get_data(data_names, size=max(data_sizes))
     for run in range(num_runs):
         q_functions, values, q_names = get_models(model_names, n=num_model)
-        data_names = get_file_names([ENV_NAME, '500000', 'action', str(data_explore_rate)], data_path)
-        dataset = get_data(data_names, size=max(data_sizes))
         record = BvftRecord(data_size=data_size, gamma=GAMMA, data_explore_rate=data_explore_rate,
                             model_count=num_model)
         record.model_values = values
@@ -118,12 +119,17 @@ def experiment2(num_model, data_size, num_runs, data_explore_rate, resolutions):
 
 def run_experiment_2(num_runs):
     num_models = [10]
-    data_sizes = [1000, 10000, 100000]
+    data_sizes = [500, 50000]
 
-    data_explore_rates = [0.2]
+    data_explore_rates = [0.0, 0.2, 0.5, 0.8, 1.0]
     resolutions = {10000: [0.05, 0.1, 0.2, 0.3, 0.5, 1.0],
                    1000: [0.05, 0.1, 0.2, 0.3, 0.5, 1.0],
-                   100000: [0.05, 0.1, 0.2, 0.3, 0.5, 1.0]}
+                   500: [0.05, 0.1, 0.2, 0.3, 0.5, 1.0],
+                   100000: [0.05, 0.1, 0.2, 0.3, 0.5, 1.0],
+                   50000: [0.05, 0.1, 0.2, 0.3, 0.5],
+                   250000: [0.05, 0.1, 0.2, 0.3, 0.5],
+                   500000: [0.05, 0.1, 0.2, 0.3, 0.5, 1.0],
+                   }
 
     for num_model in num_models:
         for data_explore_rate in data_explore_rates:
@@ -135,8 +141,8 @@ def run_experiment_2(num_runs):
 def experiment3(model_count, folder="", auto_res=False, c=0.1):
     record_files = get_file_names([ENV_NAME], path="data/bvft/" + folder)
     records = get_records(record_files, folder=folder)
-    data_sizes = [1000, 10000, 100000]
-    data_explore_rates = [0.2]
+    data_sizes = [500, 50000]
+    data_explore_rates = [0.0, 0.2, 0.5, 0.8, 1.0]
     k = 4
     model_stats = {}
     for data_explore_rate in data_explore_rates:
@@ -208,8 +214,8 @@ def experiment4(num_model):
             top, bot, left, right = i == 0, i == len(resolutions) - 1, j == 0, j == len(data_sizes) - 1
             plot_loc = (top, bot, left, right)
             plot_metric_vs_bvft_loss_plot(axs_perf_bvft[i, j], record, res, plot_loc=plot_loc)
-            plot_percent_bin_sizes(axs_bin_percent[i, j], record, res, bins, plot_loc=plot_loc)
-            plot_count_bin_sizes(axs_bin_count[i, j], record, res, bins, plot_loc=plot_loc)
+            # plot_percent_bin_sizes(axs_bin_percent[i, j], record, res, bins, plot_loc=plot_loc)
+            # plot_count_bin_sizes(axs_bin_count[i, j], record, res, bins, plot_loc=plot_loc)
         plot_loc = (True, True, j == 0, j == len(data_sizes) - 1)
         mc = num_model if include_q_star else num_model - 1
         plot_bvft_loss_vs_resolution_plot(axs_res[j], record, exclude_q_star=not include_q_star, model_count=mc,
@@ -260,27 +266,30 @@ if __name__ == '__main__':
     explore_rate = 0.2
     model_keywords = ["DQN", ENV_NAME, "Q"]
     data_keywords = [ENV_NAME, "action", str(explore_rate)]
-    data_sizes = [1000, 10000]
+    data_sizes = [500, 50000]
     # data_sizes = [20]
 
     resolutions = np.array([0.05, 0.1, 0.2, 0.3, 0.5, 1.0])
 
     model_counts = [10]*2
     TOP_Q_FLOOR = 2000
-    NORMAL_Q_CEILING = 1900
-    NORMAL_Q_FLOOR = 750
+    NORMAL_Q_CEILING = 1950
+    NORMAL_Q_FLOOR = 1300
     model_gap = 30
 
+    # TOP_Q_FLOOR = 1800
+    # NORMAL_Q_CEILING = 1600
+    # NORMAL_Q_FLOOR = 750
 
     # for num_models in model_counts:
     #     experiment1(model_keywords, data_keywords, num_models, data_sizes, resolutions)
     tm = time.time()
     for i in range(10):
         print(F"I {i} {(time.time() - tm)/3600}")
-        # run_experiment_2(30)
-    show_model_distribution()
+        # run_experiment_2(10)
+    # show_model_distribution()
     # fill_bellman_error()
-    # experiment3(10, auto_res=True, folder="", c=0.001)
+    experiment3(10, auto_res=True, folder="", c=0.000)
     # for num_model in model_counts:
     #     experiment4(num_model)
     # generate_more_q(count=1)

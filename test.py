@@ -3,9 +3,9 @@ import d4rl
 import numpy as np
 
 # Create the environment
-env = gym.make('minigrid-fourrooms-v0')
-print(env.observation_space.shape)
-print(env.action_space.n)
+env = gym.make('halfcheetah-expert-v0')
+# print(env.observation_space.shape)
+# print(env.action_space.n)
 
 
 # d4rl abides by the OpenAI gym interface
@@ -20,15 +20,13 @@ print(sum(dataset['rewards']))
 #
 # # Alternatively, use d4rl.qlearning_dataset which
 # # also adds next_observations.
-for i in range(10):
+for i in range(1):
     dataset = d4rl.qlearning_dataset(env)
     print(np.shape(dataset['observations'][0]))
-    print(len(dataset['observations']))
+    print(dataset['observations'][:10])
     print(dataset['actions'][:10])
     print(dataset['rewards'][:10])
     print(dataset['terminals'][:10])
-    for i in dataset['rewards']:
-        if i != 0.0:
-            print("FK")
+    print(np.invert(dataset['terminals'][:10]).astype(int))
     print(dataset.keys())
 

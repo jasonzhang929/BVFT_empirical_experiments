@@ -31,7 +31,7 @@ if __name__ == "__main__":
         "end_eps": 1e-2,
         "eps_decay_period": 5e5,
         # Evaluation
-        "eval_freq": 5e4,
+        "eval_freq": 10e4,
         "eval_eps": 1e-3,
         # Learning
         "discount": 0.99,
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="AsterixNoFrameskip-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Default")  # Prepends name to filename
-    parser.add_argument("--max_timesteps", default=5e6, type=int)  # Max time steps to run environment or train for
+    parser.add_argument("--max_timesteps", default=15e5, type=int)  # Max time steps to run environment or train for
     parser.add_argument("--BCQ_threshold", default=0.3, type=float)  # Threshold hyper-parameter for BCQ
     parser.add_argument("--low_noise_p", default=0.2,
                         type=float)  # Probability of a low noise episode when generating buffer
@@ -72,8 +72,13 @@ if __name__ == "__main__":
     if args.generate_buffer:
         args.max_timesteps = 5e5
         args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
+        args.low_noise_p = 1.0
 
     args.policy_name = 'DQN_AsterixNoFrameskip-v0_0_4700000_2214.0'
+
+    # args.train_behavioral = False
+    # args.generate_buffer = False
+    # args.buffer_name = 'AsterixNoFrameskip-v0_56837_500000.0_0.2'
 
     print("---------------------------------------")
     if args.train_behavioral:

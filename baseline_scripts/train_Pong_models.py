@@ -27,7 +27,7 @@ if __name__ == "__main__":
     atari_parameters = {
         # Exploration
         "start_timesteps": 2e4,
-        "initial_eps": 0.5,
+        "initial_eps": 1.0,
         "end_eps": 1e-2,
         "eps_decay_period": 50e4,
         # Evaluation
@@ -35,8 +35,8 @@ if __name__ == "__main__":
         "eval_eps": 1e-3,
         # Learning
         "discount": 0.99,
-        "buffer_size": 4e5,
-        "batch_size": 64,
+        "buffer_size": 5e5,
+        "batch_size": 32,
         "optimizer": "Adam",
         "optimizer_parameters": {
             "lr": 0.0000625,
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="PongNoFrameskip-v0")  # OpenAI gym environment name
     parser.add_argument("--seed", default=1, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Default")  # Prepends name to filename
-    parser.add_argument("--max_timesteps", default=5e6, type=int)  # Max time steps to run environment or train for
+    parser.add_argument("--max_timesteps", default=15e5, type=int)  # Max time steps to run environment or train for
     parser.add_argument("--BCQ_threshold", default=0.3, type=float)  # Threshold hyper-parameter for BCQ
     parser.add_argument("--low_noise_p", default=0.2,
                         type=float)  # Probability of a low noise episode when generating buffer
@@ -63,15 +63,19 @@ if __name__ == "__main__":
     parser.add_argument("--generate_buffer", action="store_true")  # If true, generate buffer
     args = parser.parse_args()
 
-    # args.train_behavioral = True
-    args.generate_buffer = True
+    args.train_behavioral = True
+    # args.generate_buffer = True
 
-    if args.train_behavioral:
-        args.resume = True
-    if args.generate_buffer:
-        args.max_timesteps = 4e5
-        args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
-    args.policy_name = 'DQN_PongNoFrameskip-v0_1_1950000_7.5'
+    # if args.train_behavioral:
+    #     args.resume = True
+    # if args.generate_buffer:
+    #     args.max_timesteps = 4e5
+    #     args.buffer_name = F'{np.random.randint(1e5)}_{args.max_timesteps}'
+    # args.policy_name = 'DQN_PongNoFrameskip-v0_1_1950000_7.5'
+
+    # args.train_behavioral = False
+    # args.generate_buffer = False
+    # args.buffer_name = 'PongNoFrameskip-v0_234_400000.0_0.2'
 
     print("---------------------------------------")
     if args.train_behavioral:
@@ -110,6 +114,12 @@ if __name__ == "__main__":
                                        parameters["buffer_size"], device)
 
     if args.train_behavioral or args.generate_buffer:
-        atari_BCQ.interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
+        for i in range(5):
+            args.seed = i + 1
+            atari_BCQ.interact_with_environment(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
+            replay_buffer = BCQ_utils.ReplayBuffer(state_dim, is_atari, atari_preprocessing, parameters["batch_size"],
+                                                   parameters["buffer_size"], device)
     else:
-        atari_BCQ.train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
+        for i in range(5):
+            args.seed = i + 1
+            atari_BCQ.train_BCQ(env, replay_buffer, is_atari, num_actions, state_dim, device, args, parameters)
