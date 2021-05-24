@@ -6,11 +6,11 @@ import torch.nn.functional as F
 
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, max_action, phi=0.05):
+    def __init__(self, state_dim, action_dim, max_action, phi=0.05, hidden_size=400):
         super(Actor, self).__init__()
-        self.l1 = nn.Linear(state_dim + action_dim, 400)
-        self.l2 = nn.Linear(400, 300)
-        self.l3 = nn.Linear(300, action_dim)
+        self.l1 = nn.Linear(state_dim + action_dim, hidden_size)
+        self.l2 = nn.Linear(hidden_size, hidden_size)
+        self.l3 = nn.Linear(hidden_size, action_dim)
 
         self.max_action = max_action
         self.phi = phi
@@ -23,15 +23,15 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, hidden_size=400):
         super(Critic, self).__init__()
-        self.l1 = nn.Linear(state_dim + action_dim, 400)
-        self.l2 = nn.Linear(400, 300)
-        self.l3 = nn.Linear(300, 1)
+        self.l1 = nn.Linear(state_dim + action_dim, hidden_size)
+        self.l2 = nn.Linear(hidden_size, hidden_size)
+        self.l3 = nn.Linear(hidden_size, 1)
 
-        self.l4 = nn.Linear(state_dim + action_dim, 400)
-        self.l5 = nn.Linear(400, 300)
-        self.l6 = nn.Linear(300, 1)
+        self.l4 = nn.Linear(state_dim + action_dim, hidden_size)
+        self.l5 = nn.Linear(hidden_size, hidden_size)
+        self.l6 = nn.Linear(hidden_size, 1)
 
     def forward(self, state, action):
         q1 = F.relu(self.l1(torch.cat([state, action], 1)))
@@ -93,16 +93,17 @@ class VAE(nn.Module):
 
 
 class BCQ(object):
-    def __init__(self, state_dim, action_dim, max_action, device, discount=0.99, tau=0.005, lmbda=0.75, phi=0.05):
+    def __init__(self, state_dim, action_dim, max_action, device, discount=0.99, tau=0.005, lmbda=0.75, phi=0.05,
+                 lr=1e-3, hidden_size=400):
         latent_dim = action_dim * 2
 
-        self.actor = Actor(state_dim, action_dim, max_action, phi).to(device)
+        self.actor = Actor(state_dim, action_dim, max_action, phi, hidden_size=hidden_size).to(device)
         self.actor_target = copy.deepcopy(self.actor)
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-3)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=lr)
 
-        self.critic = Critic(state_dim, action_dim).to(device)
+        self.critic = Critic(state_dim, action_dim, hidden_size=hidden_size).to(device)
         self.critic_target = copy.deepcopy(self.critic)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-3)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=lr)
 
         self.vae = VAE(state_dim, action_dim, latent_dim, max_action, device).to(device)
         self.vae_optimizer = torch.optim.Adam(self.vae.parameters())

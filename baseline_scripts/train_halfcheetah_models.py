@@ -82,4 +82,4 @@ if __name__ == "__main__":
     if args.train_behavioral or args.generate_buffer:
         mujoco_BCQ.interact_with_environment(env, state_dim, action_dim, max_action, device, args)
     else:
-        mujoco_BCQ.train_BCQ(state_dim, action_dim, max_action, device, args)
+        mujoco_BCQ.train_BCQ(state_dim, action_dim, max_action, device, args, )
