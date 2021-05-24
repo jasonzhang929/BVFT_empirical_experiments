@@ -11,8 +11,8 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="Walker2d-v2")  # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--buffer_name", default="Robust")  # Prepends name to filename
-    parser.add_argument("--eval_freq", default=5e3, type=float)  # How often (time steps) we evaluate
-    parser.add_argument("--max_timesteps", default=1e6,
+    parser.add_argument("--eval_freq", default=25e3, type=float)  # How often (time steps) we evaluate
+    parser.add_argument("--max_timesteps", default=3e5,
                         type=int)  # Max time steps to run environment or train for (this defines buffer size)
     parser.add_argument("--start_timesteps", default=25e3,
                         type=int)  # Time steps initial random policy is used before training behavioral
@@ -30,10 +30,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # args.train_behavioral = True
-    args.generate_buffer = True
+    # args.generate_buffer = True
 
     if not (args.train_behavioral or args.generate_buffer):
-        args.buffer_name = 'Walker2d-v2_76343_500000.0_0.3'
+        args.buffer_name = 'walker2d-medium-expert-v0'
 
     if args.train_behavioral:
         args.resume = True
@@ -81,4 +81,8 @@ if __name__ == "__main__":
     if args.train_behavioral or args.generate_buffer:
         mujoco_BCQ.interact_with_environment(env, state_dim, action_dim, max_action, device, args)
     else:
-        mujoco_BCQ.train_BCQ(state_dim, action_dim, max_action, device, args)
+        learning_rates = [1e-3, 1e-5]
+        hidden_sizes = [128, 1024]
+        for hidden_size in hidden_sizes:
+            for lr in learning_rates:
+                mujoco_BCQ.train_BCQ(state_dim, action_dim, max_action, device, args, lr=lr, hidden_size=hidden_size)

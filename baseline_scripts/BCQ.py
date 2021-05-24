@@ -126,6 +126,8 @@ class BCQ(object):
     def train(self, replay_buffer, iterations, batch_size=100):
 
         for it in range(iterations):
+            if it % 500 == 0:
+                print(F'iteration: {it}')
             # Sample replay buffer / batch
             state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
 

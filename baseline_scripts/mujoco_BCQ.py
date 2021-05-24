@@ -93,24 +93,25 @@ def interact_with_environment(env, state_dim, action_dim, max_action, device, ar
 
 
 # Trains BCQ offline
-def train_BCQ(state_dim, action_dim, max_action, device, args):
+def train_BCQ(state_dim, action_dim, max_action, device, args, lr=1e-3, hidden_size=400):
     # For saving files
-    setting = f"{args.env}_{args.buffer_name}"
+    setting = f"{args.env}_{args.buffer_name}_{lr}_{hidden_size}"
     buffer_name = f"{args.buffer_name}"
 
     # Initialize policy
-    policy = BCQ.BCQ(state_dim, action_dim, max_action, device, args.discount, args.tau, args.lmbda, args.phi)
+    policy = BCQ.BCQ(state_dim, action_dim, max_action, device, args.discount, args.tau, args.lmbda, args.phi, lr=lr,
+                     hidden_size=hidden_size)
 
     # Load buffer
     # replay_buffer = utils.ReplayBuffer(state_dim, action_dim, device)
     # replay_buffer.load(f"./../buffers/{buffer_name}")
     replay_buffer = d4rl_utils.D4rlReplayBuffer(buffer_name, device, int(1e6))
-
+    # print(replay_buffer.sample(5))
     evaluations = []
     episode_num = 0
     done = True
     training_iters = 0
-
+    print(F'max timesteps {args.max_timesteps}, eval_freq {args.eval_freq}')
     while training_iters < args.max_timesteps:
         pol_vals = policy.train(replay_buffer, iterations=int(args.eval_freq), batch_size=args.batch_size)
 
@@ -118,9 +119,10 @@ def train_BCQ(state_dim, action_dim, max_action, device, args):
         # np.save(f"./results/BCQ_{setting}", evaluations)
         training_iters += args.eval_freq
         stats = F"{training_iters}_{evaluations[-1]}"
-        policy.save(f"./../d4rl_models/BCQ_{setting}_{stats}")
+        file_name = f"./../d4rl_models/BCQ_{setting}_{stats}"
+        policy.save(file_name)
 
-        print(f"Training iterations: {training_iters}")
+        print(f"Training iterations: {training_iters}, saved as {file_name}")
 
 
 # Runs policy for X episodes and returns average reward
